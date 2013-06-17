@@ -1,11 +1,11 @@
-#include "../../_common/ofxOsc/ofxOsc.h"
-#include "../../_common/MiniLog.h"
-#include "KinectOsc.h"
-#include "../../_common/ofxCvKalman/ofxCvKalman.h"
+#include "../_common/ofxOsc/ofxOsc.h"
+#include "../_common/MiniLog.h"
+#include "KinServer.h"
+#include "../_common/OpenCV/ofxCvKalman.h"
 
 struct FaceThread : public MiniThread
 {
-	FaceThread(KinectOsc& ref):_ref(ref),MiniThread("FaceThread"){}
+	FaceThread(KinServer& ref):_ref(ref),MiniThread("FaceThread"){}
 	void threadedFunction()
 	{
 		if (_haar.init("../../haarcascade_frontalface_default.xml"))
@@ -25,7 +25,7 @@ struct FaceThread : public MiniThread
 	}
 
 	cv::Mat _frame;
-	KinectOsc& _ref;
+	KinServer& _ref;
 	vHaarFinder _haar;
 };
 
@@ -116,17 +116,17 @@ bool KinectParam::contains( int queryMode ) const
 	return pattern & queryMode;
 }
 
-bool KinectOsc::setup()
+bool KinServer::setup()
 {
 	return KinectDevice::setup(_param.color, _param.depth, _param.skeleton, this);
 }
 
-KinectOsc::~KinectOsc()
+KinServer::~KinServer()
 {
 	saveTo();
 }
 
-KinectOsc::KinectOsc(int device_id, KinectParam& param):
+KinServer::KinServer(int device_id, KinectParam& param):
 	KinectDevice(device_id), _param(param)
 {
 	osc_enabled = false; 
@@ -178,7 +178,7 @@ KinectOsc::KinectOsc(int device_id, KinectParam& param):
 	}
 }
 
-bool KinectOsc::loadFrom()
+bool KinServer::loadFrom()
 {
 	cv::FileStorage fs("KinConfig.xml", cv::FileStorage::READ);
 	if (!fs.isOpened())
@@ -207,7 +207,7 @@ bool KinectOsc::loadFrom()
 	}
 }
 
-bool KinectOsc::saveTo()
+bool KinServer::saveTo()
 {
 	cv::FileStorage fs("KinConfig.xml", cv::FileStorage::WRITE);
 	if (!fs.isOpened())
@@ -236,7 +236,7 @@ bool KinectOsc::saveTo()
 	}
 }
 
-void KinectOsc::updatePlayMode()
+void KinServer::updatePlayMode()
 {
 	refs.clear();
 	if (n_hands == 1)
@@ -255,7 +255,7 @@ void KinectOsc::updatePlayMode()
 	primary_player = -1;
 }
 
-void KinectOsc::onRgbData(const cv::Mat& rgb)
+void KinServer::onRgbData(const cv::Mat& rgb)
 {
 	if (!_param.face)
 		return;
@@ -266,7 +266,7 @@ void KinectOsc::onRgbData(const cv::Mat& rgb)
 	evt_face.set();		
 }
  
-void KinectOsc::setFaceMode(bool is)
+void KinServer::setFaceMode(bool is)
 {
 	_param.face = is;
 	thread_face.release();
@@ -276,7 +276,7 @@ void KinectOsc::setFaceMode(bool is)
 	}
 }
 
-void KinectOsc::onSkeletonEventBegin()
+void KinServer::onSkeletonEventBegin()
 {
 	if (_param.pattern&KinectParam::PATT_HAND_TUIO)
 	{
@@ -288,7 +288,7 @@ void KinectOsc::onSkeletonEventBegin()
 }
 
 //tuio messages are sent here
-void KinectOsc::onSkeletonEventEnd()
+void KinServer::onSkeletonEventEnd()
 {
 	static int frameseq = 0;
 	if (_param.pattern&KinectParam::PATT_HAND_TUIO)
@@ -306,7 +306,7 @@ void KinectOsc::onSkeletonEventEnd()
 	}
 }
 
-void KinectOsc::onDepthData(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
+void KinServer::onDepthData(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
 {
 	if (_param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
 		_onFingerDepth(depth_u16c1, depth_u8c3, playerIdx_u8c1);
@@ -314,7 +314,7 @@ void KinectOsc::onDepthData(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c
 		_onBlobDepth(depth_u16c1, depth_u8c3, playerIdx_u8c1);
 }
 
-void KinectOsc::onPlayerData(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx, bool isNewPlayer, NUI_SKELETON_DATA* rawData)
+void KinServer::onPlayerData(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx, bool isNewPlayer, NUI_SKELETON_DATA* rawData)
 {
 	_hand_pos[0] = skel_points[NUI_SKELETON_POSITION_HAND_LEFT];
 	_hand_pos[1] = skel_points[NUI_SKELETON_POSITION_HAND_RIGHT];
@@ -360,7 +360,7 @@ void KinectOsc::onPlayerData(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT
 	}
 }
  
-void KinectOsc::_sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx ) 
+void KinServer::_sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx ) 
 {
 	ofxOscMessage m;
 	m.setAddress("/kinect");
@@ -385,7 +385,7 @@ void KinectOsc::_sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COU
 	sender_osc->sendMessage(m);
 }
 
-void KinectOsc::_sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int playerIdx ) 
+void KinServer::_sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int playerIdx ) 
 {
 	ofxOscMessage m;
 	m.setAddress("/orient");
@@ -411,14 +411,14 @@ void KinectOsc::_sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int pla
 	sender_osc->sendMessage(m);
 }
 
-void KinectOsc::onPlayerEnter( int playerIdx )
+void KinServer::onPlayerEnter( int playerIdx )
 {
 	// update primary_player
 	if (primary_player == -1)
 		primary_player = playerIdx;
 }
 
-void KinectOsc::onPlayerLeave( int playerIdx )
+void KinServer::onPlayerLeave( int playerIdx )
 {
 	// update primary_player
 	if (primary_player == playerIdx)

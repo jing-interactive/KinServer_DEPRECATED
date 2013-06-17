@@ -41,13 +41,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\_common\OpenCV243\include\"
+				AdditionalIncludeDirectories="$(OPENCV_INCLUDE)"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
+				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -61,9 +61,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName)_d.exe"
+				OutputFile="$(SolutionDir)\..\bin\$(ProjectName)_d.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\_common\OpenCV243\lib\"
+				AdditionalLibraryDirectories="$(OPENCV_LIB)"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\_common\OpenCV243\include\"
+				AdditionalIncludeDirectories="$(OPENCV_INCLUDE)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -137,86 +137,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName).exe"
+				OutputFile="$(SolutionDir)\..\bin\$(ProjectName).exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\_common\OpenCV243\lib\"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Demo_Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\_common\OpenCV243\include\"
-				PreprocessorDefinitions="DEMO;WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName)_demo.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\_common\OpenCV243\lib\"
+				AdditionalLibraryDirectories="$(OPENCV_LIB)"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -253,39 +176,59 @@
 			Name="kinect"
 			>
 			<File
-				RelativePath="..\..\_common\Kinect\FaceTrackLib.h"
+				RelativePath="..\_common\Kinect\sdk\FaceTrackLib.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\FaceTrackLib.lib"
+				RelativePath="..\_common\Kinect\lib\FaceTrackLib.lib"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\Kinect10.lib"
+				RelativePath="..\_common\Kinect\lib\Kinect10.lib"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\KinectDevice.cpp"
+				RelativePath="..\_common\Kinect\KinectDevice.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\KinectDevice.h"
+				RelativePath="..\_common\Kinect\KinectDevice.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\NuiApi.h"
+				RelativePath="..\_common\Kinect\sdk\KinectInteraction.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\NuiImageCamera.h"
+				RelativePath="..\_common\Kinect\lib\KinectInteraction170_32.lib"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\NuiSensor.h"
+				RelativePath="..\_common\Kinect\sdk\NuiApi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\Kinect\NuiSkeleton.h"
+				RelativePath="..\_common\Kinect\sdk\NuiImageCamera.h"
+				>
+			</File>
+			<File
+				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionApi.h"
+				>
+			</File>
+			<File
+				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionDepthProcessor.h"
+				>
+			</File>
+			<File
+				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionVolume.h"
+				>
+			</File>
+			<File
+				RelativePath="..\_common\Kinect\sdk\NuiSensor.h"
+				>
+			</File>
+			<File
+				RelativePath="..\_common\Kinect\sdk\NuiSkeleton.h"
 				>
 			</File>
 		</Filter>
@@ -293,19 +236,19 @@
 			Name="opencv"
 			>
 			<File
-				RelativePath="..\..\_common\vOpenCV\BlobTracker.cpp"
+				RelativePath="..\_common\OpenCV\BlobTracker.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\vOpenCV\BlobTracker.h"
+				RelativePath="..\_common\OpenCV\BlobTracker.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\vOpenCV\OpenCV.cpp"
+				RelativePath="..\_common\OpenCV\OpenCV.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\vOpenCV\OpenCV.h"
+				RelativePath="..\_common\OpenCV\OpenCV.h"
 				>
 			</File>
 		</Filter>
@@ -313,156 +256,144 @@
 			Name="osc"
 			>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\IpEndpointName.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\IpEndpointName.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\IpEndpointName.h"
+				RelativePath="..\_common\ofxOsc\oscpack\IpEndpointName.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\MessageMappingOscPacketListener.h"
+				RelativePath="..\_common\ofxOsc\oscpack\MessageMappingOscPacketListener.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\win32\NetworkingUtils.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\win32\NetworkingUtils.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\NetworkingUtils.h"
+				RelativePath="..\_common\ofxOsc\oscpack\NetworkingUtils.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOsc.h"
+				RelativePath="..\_common\ofxOsc\ofxOsc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscArg.h"
+				RelativePath="..\_common\ofxOsc\ofxOscArg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscBundle.cpp"
+				RelativePath="..\_common\ofxOsc\ofxOscBundle.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscBundle.h"
+				RelativePath="..\_common\ofxOsc\ofxOscBundle.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscMessage.cpp"
+				RelativePath="..\_common\ofxOsc\ofxOscMessage.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscMessage.h"
+				RelativePath="..\_common\ofxOsc\ofxOscMessage.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscReceiver.cpp"
+				RelativePath="..\_common\ofxOsc\ofxOscReceiver.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscReceiver.h"
+				RelativePath="..\_common\ofxOsc\ofxOscReceiver.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscSender.cpp"
+				RelativePath="..\_common\ofxOsc\ofxOscSender.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\ofxOscSender.h"
+				RelativePath="..\_common\ofxOsc\ofxOscSender.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscException.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscException.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscHostEndianness.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscHostEndianness.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscOutboundPacketStream.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\OscOutboundPacketStream.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscOutboundPacketStream.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscOutboundPacketStream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscPacketListener.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscPacketListener.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscPrintReceivedElements.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\OscPrintReceivedElements.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscPrintReceivedElements.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscPrintReceivedElements.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscReceivedElements.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\OscReceivedElements.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscReceivedElements.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscReceivedElements.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscTypes.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\OscTypes.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\OscTypes.h"
+				RelativePath="..\_common\ofxOsc\oscpack\OscTypes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\PacketListener.h"
+				RelativePath="..\_common\ofxOsc\oscpack\PacketListener.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\TimerListener.h"
+				RelativePath="..\_common\ofxOsc\oscpack\TimerListener.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\win32\UdpSocket.cpp"
+				RelativePath="..\_common\ofxOsc\oscpack\win32\UdpSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\_common\ofxOsc\oscpack\UdpSocket.h"
+				RelativePath="..\_common\ofxOsc\oscpack\UdpSocket.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath=".\KinServer.blob.cpp"
+			RelativePath="..\src\KinServer.blob.cpp"
 			>
 		</File>
 		<File
-			RelativePath=".\KinServer.cpp"
+			RelativePath="..\src\KinServer.cpp"
 			>
 		</File>
 		<File
-			RelativePath=".\KinServer.h"
+			RelativePath="..\src\KinServer.h"
 			>
 		</File>
 		<File
-			RelativePath=".\KinServer.hand.cpp"
+			RelativePath="..\src\KinServer.hand.cpp"
 			>
 		</File>
 		<File
-			RelativePath=".\main.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\..\_common\MiniLog.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\_common\MiniMutex.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\_common\MiniThread.h"
+			RelativePath="..\src\main.cpp"
 			>
 		</File>
 	</Files>

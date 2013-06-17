@@ -1,4 +1,4 @@
-#include "KinectOsc.h"
+#include "KinServer.h"
 
 #define VERSION __DATE__
 
@@ -28,6 +28,7 @@ struct StartThread: public MiniThread
 	{
 		printf("\nKinServer %s\n\nvinjn.z@gmail.com.\n\nhttp://weibo.com/vinjnmelanie\n\n", VERSION);
 	}
+
 	void threadedFunction()
 	{
 		for (int b=0;b<8;b++)
@@ -55,7 +56,7 @@ void onGameModeChanged(int pos, void* userdata)
 {
 	if (userdata)
 	{
-		KinectOsc* dev = static_cast<KinectOsc*>(userdata);
+		KinServer* dev = static_cast<KinServer*>(userdata);
 		dev->updatePlayMode();
 	}
 }
@@ -95,7 +96,7 @@ void destroyMainWindow(const KinectParam& param)
 		cvDestroyWindow(BLOB_WINDOW);
 }
 
-void createParamWindow(const KinectParam& param, KinectOsc& device)
+void createParamWindow(const KinectParam& param, KinServer& device)
 {
 	cvNamedWindow(PARAM_WINDOW);
 	cv::resizeWindow(PARAM_WINDOW, 400,400);
@@ -174,7 +175,7 @@ int main(int argc, const char** argv)
 	showAllWindow = !args.get<int>("minim"); 
 
 	KinectParam the_param(args);
-	KinectOsc device(device_id, the_param);
+	KinServer device(device_id, the_param);
 
 	if (!device.setup())
 		return -1;

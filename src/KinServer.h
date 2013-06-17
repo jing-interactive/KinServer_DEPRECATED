@@ -1,9 +1,9 @@
-#include "../../_common/Kinect/KinectDevice.h"
-#include "../../_common/vOpenCV/OpenCV.h"
-#include "../../_common/vOpenCV/BlobTracker.h"
-#include "../../_common/MiniThread.h"
-#include "../../_common/MiniMutex.h"
-#include "../../_common/ofxOsc/ofxOsc.h"
+#include "../_common/Kinect/KinectDevice.h"
+#include "../_common/OpenCV/OpenCV.h"
+#include "../_common/OpenCV/BlobTracker.h"
+#include "../_common/MiniThread.h"
+#include "../_common/MiniMutex.h"
+#include "../_common/ofxOsc/ofxOsc.h"
 
 struct KinectParam
 {
@@ -40,7 +40,7 @@ struct FaceThread;
 
 #define MAX_AREA 100
 
-struct KinectOsc : public KinectDevice, KinectDelegate
+struct KinServer : public KinectDevice, KinectDelegate
 {
 	bool osc_enabled;//default->false
 	cv::Ptr<ofxOscSender> sender_osc;
@@ -96,9 +96,9 @@ struct KinectOsc : public KinectDevice, KinectDelegate
 
 	bool setup();
 
-	~KinectOsc();
+	~KinServer();
 
-	KinectOsc(int device_id, KinectParam& param);
+	KinServer(int device_id, KinectParam& param);
 
 	bool loadFrom();
 

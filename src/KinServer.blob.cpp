@@ -1,6 +1,6 @@
-#include "KinectOsc.h"
+#include "KinServer.h"
 
-void KinectOsc::_onBlobDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
+void KinServer::_onBlobDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
 {
 #if 0
 	threshed_depth = CV_BLACK;
@@ -72,7 +72,7 @@ void KinectOsc::_onBlobDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8
 	// 			obj.center.y = mmt.m01 / mmt.m00; 
 }
 
-void KinectOsc::_sendBlobOsc(int/* = 0*/) 
+void KinServer::_sendBlobOsc(int/* = 0*/) 
 {
 	if (native_blobs.empty())
 		return;
