@@ -1,0 +1,4 @@
+1.more general dump file format
+2.simulator
+3.joint rotation
+4.more friendly UI
