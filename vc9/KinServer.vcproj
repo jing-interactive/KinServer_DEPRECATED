@@ -212,14 +212,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionApi.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionDepthProcessor.h"
-				>
-			</File>
-			<File
 				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionVolume.h"
 				>
 			</File>
