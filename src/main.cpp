@@ -2,6 +2,8 @@
 
 #define VERSION __DATE__
 
+using namespace cv;
+
 #define KEY_DOWN(vk_code) ::GetAsyncKeyState(vk_code) & 0x8000
 
 inline bool isKeyToggle(int vk, bool* keyStatus = NULL){
@@ -26,7 +28,7 @@ struct StartThread: public MiniThread
 {
 	StartThread()
 	{
-		printf("\nKinServer %s\n\nvinjn.z@gmail.com.\n\nhttp://weibo.com/vinjnmelanie\n\n", VERSION);
+		printf("\nKinServer %s\n\nvinjn.z@gmail.com.\n\nhttp://vinjn.github.io/\n\n", VERSION);
 	}
 
 	void threadedFunction()
@@ -47,7 +49,7 @@ bool loop = true;
 
 int new_angle = 0;
 bool motor_changed = true;
-void onAngleChange(int pos)
+void onAngleChange(int pos, void* userdata)
 {
 	motor_changed = true;
 }
@@ -71,66 +73,66 @@ const char* BLOB_WINDOW = "blob_view";
 void createMainWindow(const KinectParam& param) 
 {
 	if (param.color)
-		cvNamedWindow(RGB_WINDOW);
+		namedWindow(RGB_WINDOW);
 	if (param.depth)
-		cvNamedWindow(DEPTH_WINDOW);
+		namedWindow(DEPTH_WINDOW);
 	if (param.skeleton)
-		cvNamedWindow(SKELETON_WINDOW);
+		namedWindow(SKELETON_WINDOW);
 	if (param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER/* ||param.pattern == KinectParam::PATT_HAND*/))
-		cvNamedWindow(FINGER_WINDOW);
+		namedWindow(FINGER_WINDOW);
 	else if (param.contains(KinectParam::PATT_BLOB))
-		cvNamedWindow(BLOB_WINDOW);
+		namedWindow(BLOB_WINDOW);
 }
 
 void destroyMainWindow(const KinectParam& param) 
 {
 	if (param.color)
-		cvDestroyWindow(RGB_WINDOW);
+		destroyWindow(RGB_WINDOW);
 	if (param.depth)
-		cvDestroyWindow(DEPTH_WINDOW);
+		destroyWindow(DEPTH_WINDOW);
 	if (param.skeleton)
-		cvDestroyWindow(SKELETON_WINDOW);
+		destroyWindow(SKELETON_WINDOW);
 	if (param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
-		cvDestroyWindow(FINGER_WINDOW);
+		destroyWindow(FINGER_WINDOW);
 	else if (param.contains(KinectParam::PATT_BLOB))
-		cvDestroyWindow(BLOB_WINDOW);
+		destroyWindow(BLOB_WINDOW);
 }
 
 void createParamWindow(const KinectParam& param, KinServer& device)
 {
-	cvNamedWindow(PARAM_WINDOW);
-	cv::resizeWindow(PARAM_WINDOW, 400,400);
-	cvCreateTrackbar("angle", PARAM_WINDOW, &new_angle, -NUI_CAMERA_ELEVATION_MINIMUM+NUI_CAMERA_ELEVATION_MAXIMUM, onAngleChange);
+	namedWindow(PARAM_WINDOW);
+	resizeWindow(PARAM_WINDOW, 400,400);
+	createTrackbar("angle", PARAM_WINDOW, &new_angle, -NUI_CAMERA_ELEVATION_MINIMUM+NUI_CAMERA_ELEVATION_MAXIMUM, onAngleChange);
 	if (param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
 	{
-		cvCreateTrackbar("front_Z", PARAM_WINDOW, &device.thresh_low, 400);
-		cvCreateTrackbar("after_Z", PARAM_WINDOW, &device.thresh_high, 400);
-		cvCreateTrackbar("blob_low", PARAM_WINDOW, &device.blob_low, 1000);
-		cvCreateTrackbar("blob_high", PARAM_WINDOW, &device.blob_high, 5000);
-		cvCreateTrackbar("fist_R", PARAM_WINDOW, &device.fist_radius, 50);
+		createTrackbar("front_Z", PARAM_WINDOW, &device.thresh_low, 400);
+		createTrackbar("after_Z", PARAM_WINDOW, &device.thresh_high, 400);
+		createTrackbar("blob_low", PARAM_WINDOW, &device.blob_low, 1000);
+		createTrackbar("blob_high", PARAM_WINDOW, &device.blob_high, 5000);
+		createTrackbar("fist_R", PARAM_WINDOW, &device.fist_radius, 50);
 	}
 	else if (param.contains(KinectParam::PATT_HAND_TUIO))
 	{
-		cvCreateTrackbar2("n_players", PARAM_WINDOW, &device.n_players, 2, onGameModeChanged, &device);
-		//cvCreateTrackbar2("n_hands", PARAM_WINDOW, &device.n_hands, 2, onGameModeChanged, &device);  
+		createTrackbar("n_players", PARAM_WINDOW, &device.n_players, 2, onGameModeChanged, &device);
+		//createTrackbar2("n_hands", PARAM_WINDOW, &device.n_hands, 2, onGameModeChanged, &device);  
 	}
 	else if (param.contains(KinectParam::PATT_HAND_GESTURE_DISTANCE))
 	{
 		//assume arm is 80 cm long
-		cvCreateTrackbar("hand_dist", PARAM_WINDOW, &device.hand_body_thresh, 800);
+		createTrackbar("hand_dist", PARAM_WINDOW, &device.hand_body_thresh, 800);
 	}
 	else if (param.contains(KinectParam::PATT_BLOB))
 	{
-		cvCreateTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
-		cvCreateTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
-		cvCreateTrackbar("open_param", PARAM_WINDOW, &device.open_param, 3);
+		createTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
+		createTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
+		createTrackbar("open_param", PARAM_WINDOW, &device.open_param, 3);
 	}
 	else if (param.contains(KinectParam::PATT_BLOB2))
 	{
-		cvCreateTrackbar("z_near", PARAM_WINDOW, &device.z_near, Z_FAR);
-		cvCreateTrackbar("z_far", PARAM_WINDOW, &device.z_far, Z_FAR);
-		cvCreateTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
-		cvCreateTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
+		createTrackbar("z_near", PARAM_WINDOW, &device.z_near, Z_FAR);
+		createTrackbar("z_far", PARAM_WINDOW, &device.z_far, Z_FAR);
+		createTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
+		createTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
 	}
 }
 
@@ -163,10 +165,10 @@ int main(int argc, const char** argv)
 		"{face|f|false|enable face detection mode}"
 		"{minim||0|default mimized window}"
 	};
-	cv::CommandLineParser args(argc, argv, keys);
+	CommandLineParser args(argc, argv, keys);
 	if (args.get<bool>("help"))
 	{
-		args.printParams();
+		args.printMessage();
 		return 0;
 	}
 
@@ -195,7 +197,7 @@ int main(int argc, const char** argv)
 
 	int safe_time = timeGetTime();
 
-	cv::Ptr<ofxOscReceiver> recv = new ofxOscReceiver;
+	Ptr<ofxOscReceiver> recv = new ofxOscReceiver;
 	recv->setup(PORT_RECV);
 	printf("OSC Command server listening at %d\n", PORT_RECV);
 
@@ -225,7 +227,7 @@ int main(int argc, const char** argv)
 			safe_time = timeGetTime();
 			motor_changed = false;
 		}
-		int key = cv::waitKey(1);
+		int key = waitKey(1);
 		if (key == VK_ESCAPE)
 			loop = false;
 		if (key == VK_RETURN)
@@ -258,21 +260,21 @@ int main(int argc, const char** argv)
 		if (showAllWindow)
 		{
 			if (the_param.color)
-				cvShowImage(RGB_WINDOW, &(IplImage)device.getFrame(FRAME_COLOR_U8C3));
+				imshow(RGB_WINDOW, device.getFrame(FRAME_COLOR_U8C3));
 			if (the_param.depth)
-				cvShowImage(DEPTH_WINDOW, &(IplImage)device.getFrame(FRAME_DEPTH_U8C3));
+				imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U8C3));
 			if (the_param.skeleton)
-				cvShowImage(SKELETON_WINDOW, &(IplImage)device.getFrame(FRAME_SKELETON_U8C3));
+				imshow(SKELETON_WINDOW, device.getFrame(FRAME_SKELETON_U8C3));
 			if (the_param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
 			{
 				ScopedLocker l(device.mtx_depth_data_view);
-				cvShowImage(FINGER_WINDOW, &(IplImage)device.finger_view);
+				imshow(FINGER_WINDOW, device.finger_view);
 			}
 			else
 				if (the_param.contains(KinectParam::PATT_BLOB))
 				{
 					ScopedLocker l(device.mtx_depth_data_view);
-					cvShowImage(BLOB_WINDOW, &(IplImage)device.blob_view);
+					imshow(BLOB_WINDOW, device.blob_view);
 				}
 		}
 	}

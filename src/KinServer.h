@@ -36,8 +36,6 @@ struct KinectParam
 	bool dump;//save log to file
 };
 
-struct FaceThread;
-
 #define MAX_AREA 100
 
 struct KinServer : public KinectDevice, KinectDelegate
@@ -55,13 +53,6 @@ struct KinServer : public KinectDevice, KinectDelegate
 	int n_hands;//0,1,2 ->1,2,3 two_hands/head
 
 	//////////////////////////////////////////////////////////////////////////
-	//face related
-	cv::Ptr<FaceThread> thread_face;
-	MiniEvent evt_face;
-	MiniMutex mtx_face;
-	friend struct FaceThread;
-
-	//////////////////////////////////////////////////////////////////////////
 	//hand related
 	cv::Mat threshed_depth, finger_view;
 	int thresh_low;
@@ -74,12 +65,6 @@ struct KinServer : public KinectDevice, KinectDelegate
 	int fist_radius;
 	int hand_body_thresh;
 
-	cv::Ptr<class ofxCvKalman> kalman_filters[4];
-
-#ifdef USING_FINGER_TRACKER
-	vBlobTracker finger_trakcer;
-	MiniMutex mtx_finger_trakcer;
-#endif
 	MiniMutex mtx_depth_data_view; 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -111,8 +96,6 @@ struct KinServer : public KinectDevice, KinectDelegate
 	ofxOscMessage alive;
 
 protected: //KinectDelegate
-	virtual void onRgbData(const cv::Mat& rgb);
-
 	virtual void onDepthData(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1);
 
 	virtual void onSkeletonEventBegin();
@@ -135,9 +118,6 @@ private:
 	}
 	void _addJoint_Tuio(cv::Point3f* pts, int playerIdx);
 	void _sendFinger_Osc(int playerIdx);
-#ifdef USING_FINGER_TRACKER
-	void _addFingerTuio(int playerIdx);
-#endif
 	void _sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx);
 	void _sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int playerIdx);
 

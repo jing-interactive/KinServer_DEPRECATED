@@ -1,6 +1,8 @@
 #include "KinServer.h"
 #include "../_common/OpenCV/ofxCvKalman.h"
 
+using namespace cv;
+
 void KinServer::_sendFinger_Osc(int playerIdx) 
 {
 	static char* addresses[] = {"/left","/right"};
@@ -59,8 +61,8 @@ void KinServer::_sendHandGesture_Osc(cv::Point3f* pts, int playerIdx )
 			action = "pull";
 		m.setAddress(addresses[i]);
 		m.addStringArg(action);		//0
-		m.addFloatArg(kalman_filters[i*2+0]->value());	//1
-		m.addFloatArg(kalman_filters[i*2+1]->value());	//2
+		m.addFloatArg(_hand_pos[i].x);	//1
+		m.addFloatArg(_hand_pos[i].y);	//2
 		m.addIntArg(m_DeviceId);		//3
 		m.addIntArg(playerIdx);			//4
 		sender_osc->sendMessage(m);
@@ -137,7 +139,10 @@ void KinServer::_onFingerDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_
 		two_defects[i] = &defects[i];
 	}
 #endif
-	CvPoint info_pos[] = {{30,30}, {200,30}};
+    Point info_pos[] = 
+    {
+        Point(30,30), Point(200,30)
+    };
 
 	vector<vBlob> finger_blobs;
 	LOCK_START(mtx_depth_data_view);
@@ -178,14 +183,9 @@ void KinServer::_onFingerDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_
 	}
 	for (int k=0;k<n_blobs;k++)
 	{
-		vLinePoly(&(IplImage)finger_view, blobs[k].pts);
+		vLinePoly(finger_view, blobs[k].pts);
 	}
 	LOCK_END()
-#ifdef USING_FINGER_TRACKER
-		LOCK_START(mtx_finger_trakcer);
-	finger_trakcer.trackBlobs(finger_blobs);
-	LOCK_END()
-#endif
 }
 
 void KinServer::_addJoint_Tuio(cv::Point3f* pts, int playerIdx ) 
@@ -213,38 +213,3 @@ void KinServer::_addJoint_Tuio(cv::Point3f* pts, int playerIdx )
 		alive.addIntArg(tuio_id);				// add blob to list of ALL active IDs
 	}
 }
-
-#ifdef USING_FINGER_TRACKER
-void KinServer::_addFingerTuio(int playerIdx) 
-{
-	if (!osc_enabled)
-		return;
-
-	LOCK_START(mtx_finger_trakcer);
-	const std::vector<vTrackedBlob>& blobs = finger_trakcer.trackedBlobs;
-	const int n_blobs = blobs.size();
-	for (int i=0;i<n_blobs;i++)
-	{	//Set Message
-		const vTrackedBlob& b = blobs[i];
-		//skip outside joints
-		if (b.center.x < 0 || b.center.x > DEPTH_WIDTH
-			|| b.center.y < 0|| b.center.y > DEPTH_HEIGHT)
-			continue;
-
-		int tuio_id = b.id;
-
-		ofxOscMessage set;
-		set.setAddress( "/tuio/2Dcur" );
-		set.addStringArg("set");
-		set.addIntArg(tuio_id);				// id
-		set.addFloatArg(b.center.x/DEPTH_WIDTH);	// x
-		set.addFloatArg(b.center.y/DEPTH_HEIGHT);	// y
-		set.addFloatArg(b.velocity.x/DEPTH_WIDTH);			// dX
-		set.addFloatArg(b.velocity.y/DEPTH_HEIGHT);			// dY
-		set.addFloatArg(0);		// m
-		bundle.addMessage( set );							// add message to bundle
-		alive.addIntArg(tuio_id);				// add blob to list of ALL active IDs
-	}
-	LOCK_END()
-}
-#endif 

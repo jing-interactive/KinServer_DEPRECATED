@@ -1,43 +1,14 @@
 #include "../_common/ofxOsc/ofxOsc.h"
 #include "../_common/MiniLog.h"
 #include "KinServer.h"
-#include "../_common/OpenCV/ofxCvKalman.h"
 
-struct FaceThread : public MiniThread
-{
-	FaceThread(KinServer& ref):_ref(ref),MiniThread("FaceThread"){}
-	void threadedFunction()
-	{
-		if (_haar.init("../../haarcascade_frontalface_default.xml"))
-			K_MSG("faild to load haar cascade xml");
-		else
-		{
-			while (isThreadRunning())
-			{
-				_ref.evt_face.wait();
-				ScopedLocker lock(_ref.mtx_face);
-				{
-					IplImage ipl = _frame;
-					_haar.find(&ipl, 1, false);
-				}
-			}
-		}
-	}
-
-	cv::Mat _frame;
-	KinServer& _ref;
-	vHaarFinder _haar;
-};
+using namespace cv;
 
 KinectParam::KinectParam(cv::CommandLineParser& args)
 {
 	color = args.get<bool>("color");
 	depth = args.get<bool>("depth");
 	skeleton = args.get<bool>("skeleton");
-
-	bool face = args.get<bool>("face");
-	if (face)
-		color = true;
 
 	dump = false;//default no file dumping
 	
@@ -255,27 +226,6 @@ void KinServer::updatePlayMode()
 	primary_player = -1;
 }
 
-void KinServer::onRgbData(const cv::Mat& rgb)
-{
-	if (!_param.face)
-		return;
-	ScopedLocker lock(mtx_face);
-	{
-		rgb.copyTo(thread_face->_frame);
-	}
-	evt_face.set();		
-}
- 
-void KinServer::setFaceMode(bool is)
-{
-	_param.face = is;
-	thread_face.release();
-	if (_param.face)
-	{
-		thread_face = new FaceThread(*this);
-	}
-}
-
 void KinServer::onSkeletonEventBegin()
 {
 	if (_param.pattern&KinectParam::PATT_HAND_TUIO)
@@ -320,23 +270,6 @@ void KinServer::onPlayerData(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT
 	_hand_pos[1] = skel_points[NUI_SKELETON_POSITION_HAND_RIGHT];
 	_wrist_pos[0] = skel_points[NUI_SKELETON_POSITION_WRIST_LEFT];
 	_wrist_pos[1] = skel_points[NUI_SKELETON_POSITION_WRIST_RIGHT];
-
-	float values[] = {_hand_pos[0].x, _hand_pos[0].y, _hand_pos[1].x, _hand_pos[1].y};
-
-	if (isNewPlayer)
-	{
-		for (int i=0;i<4;i++)
-		{
-			kalman_filters[i] = new ofxCvKalman(values[i]);
-		}
-	}
-	else
-	{
-		for (int i=0;i<4;i++)
-		{
-			kalman_filters[i]->update(values[i]);
-		}
-	}
 
 	if (_param.pattern & KinectParam::PATT_HAND_TUIO)
 	{

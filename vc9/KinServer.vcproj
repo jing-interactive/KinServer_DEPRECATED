@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Debug/ofxOsc.lib"
 				OutputFile="$(SolutionDir)\..\bin\$(ProjectName)_d.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(OPENCV_LIB)"
@@ -137,6 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Release/ofxOsc.lib"
 				OutputFile="$(SolutionDir)\..\bin\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OPENCV_LIB)"
@@ -173,26 +175,10 @@
 	</References>
 	<Files>
 		<Filter
-			Name="kinect"
+			Name="KinectSDK"
 			>
 			<File
-				RelativePath="..\_common\Kinect\sdk\FaceTrackLib.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\Kinect\lib\FaceTrackLib.lib"
-				>
-			</File>
-			<File
 				RelativePath="..\_common\Kinect\lib\Kinect10.lib"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\Kinect\KinectDevice.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\Kinect\KinectDevice.h"
 				>
 			</File>
 			<File
@@ -209,10 +195,6 @@
 			</File>
 			<File
 				RelativePath="..\_common\Kinect\sdk\NuiImageCamera.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\Kinect\sdk\NuiKinectFusionVolume.h"
 				>
 			</File>
 			<File
@@ -245,126 +227,14 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="osc"
+			Name="KinectDevice"
 			>
 			<File
-				RelativePath="..\_common\ofxOsc\oscpack\IpEndpointName.cpp"
+				RelativePath="..\_common\Kinect\KinectDevice.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\_common\ofxOsc\oscpack\IpEndpointName.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\MessageMappingOscPacketListener.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\win32\NetworkingUtils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\NetworkingUtils.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOsc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscArg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscBundle.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscBundle.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscMessage.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscMessage.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscReceiver.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscReceiver.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscSender.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\ofxOscSender.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscException.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscHostEndianness.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscOutboundPacketStream.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscOutboundPacketStream.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscPacketListener.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscPrintReceivedElements.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscPrintReceivedElements.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscReceivedElements.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscReceivedElements.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscTypes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\OscTypes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\PacketListener.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\TimerListener.h"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\win32\UdpSocket.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\_common\ofxOsc\oscpack\UdpSocket.h"
+				RelativePath="..\_common\Kinect\KinectDevice.h"
 				>
 			</File>
 		</Filter>
