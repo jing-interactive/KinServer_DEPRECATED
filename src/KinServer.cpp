@@ -77,16 +77,16 @@ KinectOption::KinectOption(CommandLineParser& args)
     else if (patt == "depth_stream")
     {
         pattern |= PATT_DEPTH_STREAM;
-        printf("depth streaming");
+        printf("protocol OSC");
         depth = true;
         //		color = false;
-        skeleton = true;		
+        skeleton = false;		
     }
 	else
 	{
-		printf("no message out");
+		printf("without network message");
 	}
-	puts("\n");
+	puts(".\n");
 }
 
 bool KinectOption::contains( int queryMode ) const
@@ -267,7 +267,7 @@ void KinServer::onDepthData(const MatU16& depth, const MatRGB& depthClr, const M
 		_onFingerDepth(depth, depthClr, playerIdx);
 	else if (mOption.contains(KinectOption::PATT_CAMSERVER))
         _onBlobDepth(depth, depthClr, playerIdx);
-    else if (mOption.contains(KinectOption::PATT_CAMSERVER))
+    else if (mOption.contains(KinectOption::PATT_DEPTH_STREAM))
         _sendDepthStream(depth, depthClr, playerIdx);
 }
 

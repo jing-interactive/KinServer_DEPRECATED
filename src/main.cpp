@@ -114,7 +114,6 @@ void createParamWindow(const KinectOption& param, KinServer& device)
 	else if (param.contains(KinectOption::PATT_HAND_TUIO))
 	{
 		createTrackbar("n_players", PARAM_WINDOW, &device.n_players, 2, onGameModeChanged, &device);
-		//createTrackbar2("n_hands", PARAM_WINDOW, &device.n_hands, 2, onGameModeChanged, &device);  
 	}
 	else if (param.contains(KinectOption::PATT_HAND_GESTURE_DISTANCE))
 	{
@@ -131,7 +130,7 @@ void createParamWindow(const KinectOption& param, KinServer& device)
 
 bool fruit_ninja = false;
 
-void saveFrame( string filePath ) 
+void saveFrame(const string& filePath)
 {
 	throw std::exception("The method or operation is not implemented.");
 }

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KinServer", "KinServer.vcproj", "{048C92DB-B73F-4BD5-ACC2-CA88BD2D7004}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ofxOsc", "..\..\CamServer\_common\ofxOsc\ofxOsc.vcproj", "{1C61739D-8269-467C-A1D7-28319DFED3D8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ofxOsc", "..\_common\ofxOsc\ofxOsc.vcproj", "{1C61739D-8269-467C-A1D7-28319DFED3D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

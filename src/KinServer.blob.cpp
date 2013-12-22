@@ -93,7 +93,7 @@ void KinServer::_sendBlobOsc(int/* = 0*/)
 	for (int i = 0; i < n_blobs; i++)
 	{
 		float cz = z_of_blobs[i];
-		if (cz < Z_NEAR || cz > Z_FAR)//skip illegal data
+		if (cz < DEPTH_NEAR || cz > DEPTH_FAR)//skip illegal data
 			continue;
 
 		ofxOscMessage m;
