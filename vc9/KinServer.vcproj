@@ -207,7 +207,7 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="opencv"
+			Name="OpenCV"
 			>
 			<File
 				RelativePath="..\_common\OpenCV\BlobTracker.cpp"
@@ -252,6 +252,10 @@
 		</File>
 		<File
 			RelativePath="..\src\KinServer.hand.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\src\KinServer.stream.cpp"
 			>
 		</File>
 		<File

@@ -5,19 +5,19 @@
 #include "../_common/MiniMutex.h"
 #include "../_common/ofxOsc/ofxOsc.h"
 
-struct KinectParam
+struct KinectOption
 {
 	enum{
 		PATT_INVALID = 0,
-		PATT_HAND_TUIO = 1<<0,	//tuio
-		PATT_HAND_GESTURE_DISTANCE = 1<<1,//left_pull/push && righ_pull/push
-		PATT_HAND_GESTRUE_FINGER = 1<<2,//left_open/close  && right_open/close
-		PATT_JOINT = 1<<3,	//osc joints
-		PATT_BLOB = 1<<4,	//CamServer mode
-		PATT_BLOB2 = 1<<5,//not implemented
+		PATT_HAND_TUIO = 1<<0,	            // tuio
+		PATT_HAND_GESTURE_DISTANCE = 1<<1,  // left_pull/push && righ_pull/push
+		PATT_HAND_GESTRUE_FINGER = 1<<2,    // left_open/close  && right_open/close
+		PATT_JOINT = 1<<3,	                // osc joints
+		PATT_CAMSERVER = 1<<4,              // CamServer mode
+        PATT_DEPTH_STREAM = 1<<6,           // steaming depth data
 	};
 
-	KinectParam(cv::CommandLineParser & args);
+	KinectOption(cv::CommandLineParser & args);
 
 	bool contains(int queryMode) const;
 
@@ -38,15 +38,16 @@ struct KinectParam
 
 #define MAX_AREA 100
 
-struct KinServer : public KinectDevice, KinectDelegate
+class KinServer : public KinectDevice, KinectDelegate
 {
+public:
 	bool osc_enabled;//default->false
 	cv::Ptr<ofxOscSender> sender_osc;
 	cv::Ptr<ofxOscSender> sender_tuio;
 
 	std::vector<int> refs;
 
-	KinectParam& _param;
+	KinectOption& mOption;
 	///
 	int n_players;//0,1 ->1,2
 	int primary_player;//only necessary for one player mode
@@ -54,7 +55,8 @@ struct KinServer : public KinectDevice, KinectDelegate
 
 	//////////////////////////////////////////////////////////////////////////
 	//hand related
-	cv::Mat threshed_depth, finger_view;
+	MatU8 threshed_depth;
+    MatRGB finger_view;
 	int thresh_low;
 	int thresh_high;
 	int blob_low;
@@ -83,7 +85,7 @@ struct KinServer : public KinectDevice, KinectDelegate
 
 	~KinServer();
 
-	KinServer(int device_id, KinectParam& param);
+	KinServer(int device_id, KinectOption& param);
 
 	bool loadFrom();
 
@@ -96,7 +98,7 @@ struct KinServer : public KinectDevice, KinectDelegate
 	ofxOscMessage alive;
 
 protected: //KinectDelegate
-	virtual void onDepthData(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1);
+	virtual void onDepthData(const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx);
 
 	virtual void onSkeletonEventBegin();
 
@@ -122,7 +124,9 @@ private:
 	void _sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int playerIdx);
 
 	void _sendBlobOsc(int = 0);
-	void _onFingerDepth( const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1 );
-	void _onBlobDepth( const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1 );
+	void _onFingerDepth( const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx );
+	void _onBlobDepth( const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx );
 	void _sendHandGesture_Osc(cv::Point3f* pts, int playerIdx );
+
+    void _sendDepthStream( const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx );
 };

@@ -1,6 +1,8 @@
 #include "KinServer.h"
 
-void KinServer::_onBlobDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
+using namespace cv;
+
+void KinServer::_onBlobDepth(const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx)
 {
 #if 0
 	threshed_depth = CV_BLACK;
@@ -25,21 +27,21 @@ void KinServer::_onBlobDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8
 	{
 		if (native_blobs[i].isHole)
 			continue;
-		cv::Point2f ct = native_blobs[i].center;
+		Point2f ct = native_blobs[i].center;
 		ushort z = depth_u16.at<ushort>((int)ct.y, (int)ct.x);
-		center_of_blobs.push_back(cv::Point3f(ct.x/DEPTH_WIDTH,ct.y/DEPTH_HEIGHT,z));
+		center_of_blobs.push_back(Point3f(ct.x/DEPTH_WIDTH,ct.y/DEPTH_HEIGHT,z));
 
 		circle(blob_view, ct, 10, CV_GRAY, 4);
 	}
 	LOCK_END();
 #else
-	threshed_depth = CV_BLACK;
+	threshed_depth.setTo(CV_BLACK);
 	for (int y=0;y<DEPTH_HEIGHT;y++)
 	{
 		for (int x=0;x<DEPTH_WIDTH;x++)
 		{
-			cv::Vec3b clr = depth_u8c3.at<cv::Vec3b>(y,x);
-			uchar& out = threshed_depth.at<uchar>(y,x);
+			const Vec3b& clr = depthClr(y,x);
+			uchar& out = threshed_depth(y,x);
 			if ((clr[0] != clr[1]) || (clr[1] != clr[2]))
 				out = 255;
 		}
@@ -56,10 +58,10 @@ void KinServer::_onBlobDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8
 	{
 		// 			if (native_blobs[i].isHole)
 		// 				continue;
-		cv::Point2f ct = native_blobs[i].center;
-		ushort z = depth_u16c1.at<ushort>(ct.y, ct.x);
+		Point2f ct = native_blobs[i].center;
+		ushort z = depth(ct.y, ct.x);
 		z_of_blobs.push_back(z);
-		int idx =  playerIdx_u8c1.at<uchar>(ct.y, ct.x) -1;//TODO: make sure about the -1
+		int idx =  playerIdx(ct.y, ct.x) - 1;//TODO: make sure about the -1
 		id_of_blobs.push_back(idx);
 
 		circle(blob_view, ct, 10, CV_GRAY, 4);

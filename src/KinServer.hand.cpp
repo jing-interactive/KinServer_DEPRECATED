@@ -37,13 +37,13 @@ T lmap(T val, T inMin, T inMax, T outMin, T outMax)
 	return outMin + (outMax - outMin) * ((val - inMin) / (inMax - inMin));
 }
 
-void KinServer::_sendHandGesture_Osc(cv::Point3f* pts, int playerIdx )
+void KinServer::_sendHandGesture_Osc(Point3f* pts, int playerIdx )
 {
 	static char* addresses[] = {"/left","/right"}; 
 	int hand_ids[] = {NUI_SKELETON_POSITION_HAND_LEFT, NUI_SKELETON_POSITION_HAND_RIGHT};
 	string action;
 
-	cv::Point3f center(pts[NUI_SKELETON_POSITION_HIP_CENTER].x, (pts[NUI_SKELETON_POSITION_HIP_CENTER].y+pts[NUI_SKELETON_POSITION_HEAD].y)/2,
+	Point3f center(pts[NUI_SKELETON_POSITION_HIP_CENTER].x, (pts[NUI_SKELETON_POSITION_HIP_CENTER].y+pts[NUI_SKELETON_POSITION_HEAD].y)/2,
 		pts[NUI_SKELETON_POSITION_SHOULDER_CENTER].z);
 	int center_ids[] = {NUI_SKELETON_POSITION_SHOULDER_CENTER, NUI_SKELETON_POSITION_SHOULDER_CENTER};
  
@@ -69,15 +69,16 @@ void KinServer::_sendHandGesture_Osc(cv::Point3f* pts, int playerIdx )
 	}
 }
 
-void KinServer::_onFingerDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
+void KinServer::_onFingerDepth(const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx)
 {
-	cv::Point3f hands[2];
+#if 0
+	Point3f hands[2];
 	hands[0] = 0.5f*(jointTo320X240(_hand_pos[0]) + jointTo320X240(_wrist_pos[0]));
 	hands[1] = 0.5f*(jointTo320X240(_hand_pos[1]) + jointTo320X240(_wrist_pos[1]));
 
 	const int  SZ = 40;
 
-	threshed_depth = cv::Scalar(0); 
+    threshed_depth = MatU8::zeros(threshed_depth.size);
 
 	for (int i=0;i<2;i++)
 	{
@@ -89,9 +90,9 @@ void KinServer::_onFingerDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_
 		for (int y=y0;y<y1;y++)
 			for (int x=x0;x<x1;x++)
 			{
-				ushort dep = depth_u16c1.at<ushort>(y,x);
-				uchar idx = playerIdx_u8c1.at<uchar>(y,x) -1;//TODO: the SAME THING -> -1
-				uchar& out = threshed_depth.at<uchar>(y,x);
+				ushort dep = depth(y,x);
+				uchar idx = playerIdx(y,x) -1;//TODO: the SAME THING -> -1
+				uchar& out = threshed_depth(y,x);
 				if (idx != -1)
 				{
 					if (dep < hands[i].z+thresh_high && dep > hands[i].z-thresh_low)
@@ -153,10 +154,10 @@ void KinServer::_onFingerDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_
 		if (two_blobs[i] != NULL)
 		{
 			//	vFillPoly(&(IplImage)hand_view, two_blobs[i]->pts, vDefaultColor(i));
-			cv::RotatedRect box = two_blobs[i]->rotBox;
+			RotatedRect box = two_blobs[i]->rotBox;
 			box.size.width *= 0.5;
 			box.size.height *= 0.5;
-			cv::ellipse(finger_view, box, CV_RED, 1);
+			ellipse(finger_view, box, CV_RED, 1);
 			int n_pts = two_defects[i]->size();
 
 			for (int k=0;k<n_pts;k++)
@@ -179,16 +180,18 @@ void KinServer::_onFingerDepth(const cv::Mat& depth_u16c1, const cv::Mat& depth_
 
 	for (int k=0;k<2;k++)
 	{
-		cv::circle(finger_view,Point(hands[k].x, hands[k].y), 3, CV_RED);
+		circle(finger_view,Point(hands[k].x, hands[k].y), 3, CV_RED);
 	}
 	for (int k=0;k<n_blobs;k++)
 	{
 		vLinePoly(finger_view, blobs[k].pts);
 	}
 	LOCK_END()
+
+#endif
 }
 
-void KinServer::_addJoint_Tuio(cv::Point3f* pts, int playerIdx ) 
+void KinServer::_addJoint_Tuio(Point3f* pts, int playerIdx ) 
 {
 	for (int i=0;i<refs.size();i++)
 	{	//Set Message

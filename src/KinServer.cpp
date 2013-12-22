@@ -4,11 +4,11 @@
 
 using namespace cv;
 
-KinectParam::KinectParam(cv::CommandLineParser& args)
+KinectOption::KinectOption(CommandLineParser& args)
 {
-	color = args.get<bool>("color");
-	depth = args.get<bool>("depth");
-	skeleton = args.get<bool>("skeleton");
+	color = args.has("color");
+	depth = args.has("depth");
+	skeleton = args.has("skeleton");
 
 	dump = false;//default no file dumping
 	
@@ -26,14 +26,13 @@ KinectParam::KinectParam(cv::CommandLineParser& args)
 	if (patt == "jointed_blob")
 	{
 		pattern |= PATT_HAND_GESTURE_DISTANCE;
-		pattern |= PATT_BLOB;
+		pattern |= PATT_CAMSERVER;
 		printf("protocol OSC");
 		depth = true;
 		//	color = false;
 		skeleton = true;
 	}
-	else
-	if (patt == "finger")
+	else if (patt == "finger")
 	{
 		pattern |= PATT_HAND_GESTRUE_FINGER;
 		printf("protocol OSC");
@@ -59,9 +58,9 @@ KinectParam::KinectParam(cv::CommandLineParser& args)
 		//		color = false;
 		skeleton = true;			
 	}
-	else if (patt == "blob")
+	else if (patt == "cam_server")
 	{
-		pattern |= PATT_BLOB;
+		pattern |= PATT_CAMSERVER;
 		printf("protocol OSC");
 		depth = true;
 		//	color = false;
@@ -75,6 +74,14 @@ KinectParam::KinectParam(cv::CommandLineParser& args)
 		//		color = false;
 		skeleton = true;		
 	}
+    else if (patt == "depth_stream")
+    {
+        pattern |= PATT_DEPTH_STREAM;
+        printf("depth streaming");
+        depth = true;
+        //		color = false;
+        skeleton = true;		
+    }
 	else
 	{
 		printf("no message out");
@@ -82,14 +89,14 @@ KinectParam::KinectParam(cv::CommandLineParser& args)
 	puts("\n");
 }
 
-bool KinectParam::contains( int queryMode ) const
+bool KinectOption::contains( int queryMode ) const
 {
 	return pattern & queryMode;
 }
 
 bool KinServer::setup()
 {
-	return KinectDevice::setup(_param.color, _param.depth, _param.skeleton, this);
+	return KinectDevice::setup(mOption.color, mOption.depth, mOption.skeleton, this);
 }
 
 KinServer::~KinServer()
@@ -97,19 +104,17 @@ KinServer::~KinServer()
 	saveTo();
 }
 
-KinServer::KinServer(int device_id, KinectParam& param):
-	KinectDevice(device_id), _param(param)
+KinServer::KinServer(int device_id, KinectOption& param):
+	KinectDevice(device_id), mOption(param)
 {
 	osc_enabled = false; 
 
-	threshed_depth.create(cv::Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_8UC1);
-	threshed_depth = CV_BLACK;
+	threshed_depth = MatU8(Size(DEPTH_WIDTH, DEPTH_HEIGHT), 0);
 	thresh_low = 150;
 	thresh_high = 40;
 	blob_low = 300;
 	blob_high = 2500;
-	finger_view.create(cv::Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_8UC3);
-	finger_view = cv::Scalar(0,0,0);
+	finger_view = MatRGB(Size(DEPTH_WIDTH, DEPTH_HEIGHT), Vec3b(255, 255, 255));
 
 	fist_radius = 20;
 	n_hands = 2;//default: two hands
@@ -123,27 +128,27 @@ KinServer::KinServer(int device_id, KinectParam& param):
 	z_far = 3000;
 	min_area = 1;
 	max_area = 60;
-	blob_view.create(cv::Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_8UC1);
+	blob_view.create(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_8UC1);
 	blob_view = CV_BLACK;
 	open_param = 1;
 
 	sender_osc = new ofxOscSender;
-	sender_osc->setup(_param.client, _param.port_osc);
-	printf("OSC\t[%s:%d]\n",_param.client.c_str(), _param.port_osc);
+	sender_osc->setup(mOption.client, mOption.port_osc);
+	printf("OSC\t[%s:%d]\n",mOption.client.c_str(), mOption.port_osc);
 
-	int port_tuio = _param.port_tuio;
+	int port_tuio = mOption.port_tuio;
 	if (port_tuio > 0)
 	{
 		sender_tuio = new ofxOscSender;
-		sender_tuio->setup(_param.client, port_tuio);
-		printf("TUIO\t[%s:%d]\n",_param.client.c_str(), port_tuio);
+		sender_tuio->setup(mOption.client, port_tuio);
+		printf("TUIO\t[%s:%d]\n",mOption.client.c_str(), port_tuio);
 	}
 	puts("\n");
 
 	loadFrom();
 
 	//TODO: if (_param.finger) ?
-	if (_param.contains(KinectParam::PATT_HAND_TUIO))
+	if (mOption.contains(KinectOption::PATT_HAND_TUIO))
 	{
 		updatePlayMode();
 	}
@@ -151,7 +156,7 @@ KinServer::KinServer(int device_id, KinectParam& param):
 
 bool KinServer::loadFrom()
 {
-	cv::FileStorage fs("KinConfig.xml", cv::FileStorage::READ);
+	FileStorage fs("KinConfig.xml", FileStorage::READ);
 	if (!fs.isOpened())
 	{
 		printf("KinConfig.xml doesn't exist, KinServer starts with default values.\n");
@@ -180,7 +185,7 @@ bool KinServer::loadFrom()
 
 bool KinServer::saveTo()
 {
-	cv::FileStorage fs("KinConfig.xml", cv::FileStorage::WRITE);
+	FileStorage fs("KinConfig.xml", FileStorage::WRITE);
 	if (!fs.isOpened())
 	{
 		printf("failed to open KinConfig.xml for writing.\n");
@@ -228,7 +233,7 @@ void KinServer::updatePlayMode()
 
 void KinServer::onSkeletonEventBegin()
 {
-	if (_param.pattern&KinectParam::PATT_HAND_TUIO)
+	if (mOption.pattern&KinectOption::PATT_HAND_TUIO)
 	{
 		bundle.clear();
 		alive.clear();
@@ -241,7 +246,7 @@ void KinServer::onSkeletonEventBegin()
 void KinServer::onSkeletonEventEnd()
 {
 	static int frameseq = 0;
-	if (_param.pattern&KinectParam::PATT_HAND_TUIO)
+	if (mOption.pattern&KinectOption::PATT_HAND_TUIO)
 	{
 		frameseq++;
 		// Send fseq message
@@ -256,51 +261,53 @@ void KinServer::onSkeletonEventEnd()
 	}
 }
 
-void KinServer::onDepthData(const cv::Mat& depth_u16c1, const cv::Mat& depth_u8c3, const cv::Mat& playerIdx_u8c1)
+void KinServer::onDepthData(const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx)
 {
-	if (_param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
-		_onFingerDepth(depth_u16c1, depth_u8c3, playerIdx_u8c1);
-	else if (_param.contains(KinectParam::PATT_BLOB))
-		_onBlobDepth(depth_u16c1, depth_u8c3, playerIdx_u8c1);
+	if (mOption.contains(KinectOption::PATT_HAND_GESTRUE_FINGER))
+		_onFingerDepth(depth, depthClr, playerIdx);
+	else if (mOption.contains(KinectOption::PATT_CAMSERVER))
+        _onBlobDepth(depth, depthClr, playerIdx);
+    else if (mOption.contains(KinectOption::PATT_CAMSERVER))
+        _sendDepthStream(depth, depthClr, playerIdx);
 }
 
-void KinServer::onPlayerData(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx, bool isNewPlayer, NUI_SKELETON_DATA* rawData)
+void KinServer::onPlayerData(Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx, bool isNewPlayer, NUI_SKELETON_DATA* rawData)
 {
 	_hand_pos[0] = skel_points[NUI_SKELETON_POSITION_HAND_LEFT];
 	_hand_pos[1] = skel_points[NUI_SKELETON_POSITION_HAND_RIGHT];
 	_wrist_pos[0] = skel_points[NUI_SKELETON_POSITION_WRIST_LEFT];
 	_wrist_pos[1] = skel_points[NUI_SKELETON_POSITION_WRIST_RIGHT];
 
-	if (_param.pattern & KinectParam::PATT_HAND_TUIO)
+	if (mOption.pattern & KinectOption::PATT_HAND_TUIO)
 	{
 		if ((n_players == 1 && primary_player == playerIdx) || n_players == 2)
 			_addJoint_Tuio(skel_points, playerIdx);//just add, not send
 	}
 
-	int patt = _param.pattern;
-	if (patt & KinectParam::PATT_HAND_GESTURE_DISTANCE)
+	int patt = mOption.pattern;
+	if (patt & KinectOption::PATT_HAND_GESTURE_DISTANCE)
 	{
 		_sendHandGesture_Osc(skel_points, playerIdx);//distance based stable hand info
 	}
-	if (patt & KinectParam::PATT_HAND_GESTRUE_FINGER)
+	if (patt & KinectOption::PATT_HAND_GESTRUE_FINGER)
 	{
 		_sendFinger_Osc(playerIdx);//detailed hand info
 	}
-	if (patt & KinectParam::PATT_JOINT)
+	if (patt & KinectOption::PATT_JOINT)
 	{
 		_sendJoint_Osc(skel_points, playerIdx);
 		_sendOrientation_Osc(rawData, playerIdx);
 	}
 }
  
-void KinServer::_sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx ) 
+void KinServer::_sendJoint_Osc(Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx ) 
 {
 	ofxOscMessage m;
 	m.setAddress("/kinect");
 	m.addIntArg(m_DeviceId);
 	m.addIntArg(playerIdx);
 
-	if (_param.dump)
+	if (mOption.dump)
 	{
 		MiniLog("\n/kinect, %d\n",playerIdx);
 	}
@@ -312,7 +319,7 @@ void KinServer::_sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COU
 		m.addStringArg(buf);
 
 		//for dumping
-		if (_param.dump)
+		if (mOption.dump)
 			MiniLog("%.3f,%.3f,%.3f,%.3f\n", skel_points[i].x, skel_points[i].y, skel_points[i].z, m_Confidences[i]);
 	}
 	sender_osc->sendMessage(m);
@@ -325,7 +332,7 @@ void KinServer::_sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int pla
 	m.addIntArg(m_DeviceId);
 	m.addIntArg(playerIdx);
 
-	if (_param.dump)
+	if (mOption.dump)
 	{
 		MiniLog("\n/orient, %d\n",playerIdx);
 	}
@@ -338,7 +345,7 @@ void KinServer::_sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int pla
 		sprintf(buf, "%.3f,%.3f,%.3f,%.3f", quaternion.x, quaternion.y, quaternion.z, quaternion.w);
 		m.addStringArg(buf);
 		//for dumping
-		if (_param.dump)
+		if (mOption.dump)
 			MiniLog("%.3f,%.3f,%.3f,%.3f\n", quaternion.x, quaternion.y, quaternion.z, quaternion.w);
 	}
 	sender_osc->sendMessage(m);

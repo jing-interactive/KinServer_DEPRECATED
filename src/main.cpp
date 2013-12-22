@@ -70,7 +70,7 @@ const char* SKELETON_WINDOW ="skeleton_view";
 const char* FINGER_WINDOW = "finger_view";
 const char* BLOB_WINDOW = "blob_view";
 
-void createMainWindow(const KinectParam& param) 
+void createMainWindow(const KinectOption& param) 
 {
 	if (param.color)
 		namedWindow(RGB_WINDOW);
@@ -78,13 +78,13 @@ void createMainWindow(const KinectParam& param)
 		namedWindow(DEPTH_WINDOW);
 	if (param.skeleton)
 		namedWindow(SKELETON_WINDOW);
-	if (param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER/* ||param.pattern == KinectParam::PATT_HAND*/))
+	if (param.contains(KinectOption::PATT_HAND_GESTRUE_FINGER/* ||param.pattern == KinectParam::PATT_HAND*/))
 		namedWindow(FINGER_WINDOW);
-	else if (param.contains(KinectParam::PATT_BLOB))
+	else if (param.contains(KinectOption::PATT_CAMSERVER))
 		namedWindow(BLOB_WINDOW);
 }
 
-void destroyMainWindow(const KinectParam& param) 
+void destroyMainWindow(const KinectOption& param) 
 {
 	if (param.color)
 		destroyWindow(RGB_WINDOW);
@@ -92,18 +92,18 @@ void destroyMainWindow(const KinectParam& param)
 		destroyWindow(DEPTH_WINDOW);
 	if (param.skeleton)
 		destroyWindow(SKELETON_WINDOW);
-	if (param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
+	if (param.contains(KinectOption::PATT_HAND_GESTRUE_FINGER))
 		destroyWindow(FINGER_WINDOW);
-	else if (param.contains(KinectParam::PATT_BLOB))
+	else if (param.contains(KinectOption::PATT_CAMSERVER))
 		destroyWindow(BLOB_WINDOW);
 }
 
-void createParamWindow(const KinectParam& param, KinServer& device)
+void createParamWindow(const KinectOption& param, KinServer& device)
 {
 	namedWindow(PARAM_WINDOW);
 	resizeWindow(PARAM_WINDOW, 400,400);
 	createTrackbar("angle", PARAM_WINDOW, &new_angle, -NUI_CAMERA_ELEVATION_MINIMUM+NUI_CAMERA_ELEVATION_MAXIMUM, onAngleChange);
-	if (param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
+	if (param.contains(KinectOption::PATT_HAND_GESTRUE_FINGER))
 	{
 		createTrackbar("front_Z", PARAM_WINDOW, &device.thresh_low, 400);
 		createTrackbar("after_Z", PARAM_WINDOW, &device.thresh_high, 400);
@@ -111,28 +111,21 @@ void createParamWindow(const KinectParam& param, KinServer& device)
 		createTrackbar("blob_high", PARAM_WINDOW, &device.blob_high, 5000);
 		createTrackbar("fist_R", PARAM_WINDOW, &device.fist_radius, 50);
 	}
-	else if (param.contains(KinectParam::PATT_HAND_TUIO))
+	else if (param.contains(KinectOption::PATT_HAND_TUIO))
 	{
 		createTrackbar("n_players", PARAM_WINDOW, &device.n_players, 2, onGameModeChanged, &device);
 		//createTrackbar2("n_hands", PARAM_WINDOW, &device.n_hands, 2, onGameModeChanged, &device);  
 	}
-	else if (param.contains(KinectParam::PATT_HAND_GESTURE_DISTANCE))
+	else if (param.contains(KinectOption::PATT_HAND_GESTURE_DISTANCE))
 	{
 		//assume arm is 80 cm long
 		createTrackbar("hand_dist", PARAM_WINDOW, &device.hand_body_thresh, 800);
 	}
-	else if (param.contains(KinectParam::PATT_BLOB))
+	else if (param.contains(KinectOption::PATT_CAMSERVER))
 	{
 		createTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
 		createTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
 		createTrackbar("open_param", PARAM_WINDOW, &device.open_param, 3);
-	}
-	else if (param.contains(KinectParam::PATT_BLOB2))
-	{
-		createTrackbar("z_near", PARAM_WINDOW, &device.z_near, Z_FAR);
-		createTrackbar("z_far", PARAM_WINDOW, &device.z_far, Z_FAR);
-		createTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
-		createTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
 	}
 }
 
@@ -152,21 +145,20 @@ int main(int argc, const char** argv)
 
 	const char *keys =
 	{    
-		"{help|h|false|display help info}"
-		"{fruit_ninja||false|fruit_ninja mode is special}"
-		"{device||0|the kinect device to use, default is 0}"
-		"{client|c|localhost|the client's ip}"
-		"{tuio||-1|the tuio port that client is listening at}"
-		"{osc||7777|the osc port that client is listening at}"
-		"{color||false|use color stream}"
-		"{depth||true|use depth stream}" 
-		"{skeleton||true|use skeleton stream}"
-		"{pattern||hand|running pattern, available options are finger/hand_gesture/hand/body/blob/jointed_blob}"
-		"{face|f|false|enable face detection mode}"
-		"{minim||0|default mimized window}"
+		"{help h usage ?|false      |display help info}"
+		"{fruit_ninja   |false      |fruit_ninja mode is special}"
+		"{device        |0          |the kinect device to use, default is 0}"
+		"{client        |localhost  |the client's ip}"
+		"{tuio          |-1         |the tuio port that client is listening at}"
+		"{osc           |7777       |the osc port that client is listening at}"
+		"{color         |false      |use color stream}"
+		"{depth         |true       |use depth stream}" 
+		"{skeleton      |true       |use skeleton stream}"
+		"{pattern       |hand       |running pattern, available options are finger/hand_gesture/hand/body/cam_server/jointed_blob/depth_stream}"
+		"{minim         |0          |default mimized window}"
 	};
 	CommandLineParser args(argc, argv, keys);
-	if (args.get<bool>("help"))
+	if (args.has("help"))
 	{
 		args.printMessage();
 		return 0;
@@ -176,13 +168,13 @@ int main(int argc, const char** argv)
 	
 	showAllWindow = !args.get<int>("minim"); 
 
-	KinectParam the_param(args);
+	KinectOption the_param(args);
 	KinServer device(device_id, the_param);
 
 	if (!device.setup())
 		return -1;
 
-	fruit_ninja = args.get<bool>("fruit_ninja");
+	fruit_ninja = args.has("fruit_ninja");
 	if (fruit_ninja)
 	{
 		device.osc_enabled = false;
@@ -265,13 +257,13 @@ int main(int argc, const char** argv)
 				imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U8C3));
 			if (the_param.skeleton)
 				imshow(SKELETON_WINDOW, device.getFrame(FRAME_SKELETON_U8C3));
-			if (the_param.contains(KinectParam::PATT_HAND_GESTRUE_FINGER))
+			if (the_param.contains(KinectOption::PATT_HAND_GESTRUE_FINGER))
 			{
 				ScopedLocker l(device.mtx_depth_data_view);
 				imshow(FINGER_WINDOW, device.finger_view);
 			}
 			else
-				if (the_param.contains(KinectParam::PATT_BLOB))
+				if (the_param.contains(KinectOption::PATT_CAMSERVER))
 				{
 					ScopedLocker l(device.mtx_depth_data_view);
 					imshow(BLOB_WINDOW, device.blob_view);
