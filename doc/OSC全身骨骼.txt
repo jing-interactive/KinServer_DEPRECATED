@@ -15,43 +15,44 @@ http://www.microsoft.com/download/en/details.aspx?id=5555
 osc消息的定义如下：
 osc_address = "/kinect"
 
-第0位 表示跟踪玩家的索引
-第1~20都是关节点的坐标，以string格式发送，格式为"0.333,0.555,1.333,0.5"
+第0位 表示发送消息的Kinect设备的ID
+第1位 表示跟踪玩家的索引
+第2~21都是关节点的坐标，以string格式发送，格式为"0.333,0.555,1.333,0.5"
 	前两个坐标是对应的关节在窗口坐标系下的横坐标和纵坐标，已归一化到0~1之间，方便使用
 	第三个坐标是对应的关节离kinect的物理距离，单位是米，所以1.333就是1.333米
 	第四个坐标表示这个关节的检测准确率，有三档，0/0.5/1，分别表示未检测到/部分检测到/完全检测到
 
 详细的消息定义如下
 索引      含义
-0    int，表示所跟踪的玩家的索引，有效范围是0,1,2,3,4,5
+0    int，表示设备ID，从0开始
+1    int，表示所跟踪的玩家的索引，有效范围是0,1,2,3,4,5
 	//root & head
-1	HIP_CENTER
-2	SPINE
-3	SHOULDER_CENTER
-4	HEAD
+2	HIP_CENTER
+3	SPINE
+4	SHOULDER_CENTER
+5	HEAD
 
     //arm & hand
-5	SHOULDER_LEFT
-6	ELBOW_LEFT
-7	WRIST_LEFT
-8	HAND_LEFT
+6	SHOULDER_LEFT
+7	ELBOW_LEFT
+8	WRIST_LEFT
+9	HAND_LEFT
 
-9	SHOULDER_RIGHT
-10	ELBOW_RIGHT
-11	WRIST_RIGHT
-12	HAND_RIGHT
+10	SHOULDER_RIGHT
+11	ELBOW_RIGHT
+12	WRIST_RIGHT
+13	HAND_RIGHT
 
     //hip & leg
-13	HIP_LEFT
-14	KNEE_LEFT
-15	ANKLE_LEFT
-16	FOOT_LEFT
+14	HIP_LEFT
+15	KNEE_LEFT
+16	ANKLE_LEFT
+17	FOOT_LEFT
 
-17	HIP_RIGHT
-18	KNEE_RIGHT
-19	ANKLE_RIGHT
-20	FOOT_RIGHT
-
+18	HIP_RIGHT
+19	KNEE_RIGHT
+20	ANKLE_RIGHT
+21	FOOT_RIGHT
 
 客户端范例一
 zen_mouse.py
@@ -62,5 +63,5 @@ zen_mouse.py
 （2）按住ESC一秒钟后推出鼠标控制
 
 客户端范例二
-/Client/BodyTracker/BodyTracker.pde
+samples/BodyTracker/BodyTracker.pde
 需要安装oscP5库，实现了骨骼的在processing中的可视化
