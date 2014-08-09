@@ -14,17 +14,17 @@ void KinServer::_sendDepthStream(const MatU16& depth, const MatRGB& depthClr, co
     std::fill(start,    start + DEPTH_HEIGHT,   DEPTH_WIDTH);
     std::fill(end,      end + DEPTH_HEIGHT,     0);
 
-	for (int y=0;y<DEPTH_HEIGHT;y++)
-	{
-		for (int x=0;x<DEPTH_WIDTH;x++)
-		{
+    for (int y=0;y<DEPTH_HEIGHT;y++)
+    {
+        for (int x=0;x<DEPTH_WIDTH;x++)
+        {
             if (playerIdx(y, x) > 0)
             {
                 start[y] = min<int>(start[y], x);
                 end[y] = max<int>(end[y], x);
             }
-		}
-	}
+        }
+    }
 
     for (int y=0;y<DEPTH_HEIGHT;y++)
     {
