@@ -12,7 +12,6 @@ struct KinectOption
         PATT_HAND_TUIO = 1<<0,	            // tuio
         PATT_JOINT = 1<<1,	                // osc joints
         PATT_CAMSERVER = 1<<2,              // CamServer mode
-        PATT_DEPTH_STREAM = 1<<3,           // steaming depth data
         PATT_CCV = 1<<4,                    // Core community vision
     };
 
@@ -35,8 +34,6 @@ struct KinectOption
     bool dump;//save log to file
 };
 
-#define MAX_AREA 100
-
 class KinServer : public KinectDevice, KinectDelegate
 {
 public:
@@ -54,21 +51,21 @@ public:
 
     //////////////////////////////////////////////////////////////////////////
     //hand related
-    MatU8 threshed_depth;
-    MatRGB finger_view;
+    cv::Mat1b threshed_depth;
+    cv::Mat1w depth_bg;
+    cv::Mat3b finger_view;
+    vBlobTracker blobTracker;
 
     MiniMutex mtx_depth_data_view; 
 
     //////////////////////////////////////////////////////////////////////////
     //blob related
-    int z_near;
-    int z_far;
+    int z_threshold_mm;
     int min_area;
-    int max_area;
     vector<vBlob> native_blobs;
     vector<float> z_of_blobs;
     vector<int> id_of_blobs;
-    cv::Mat blob_view;
+    cv::Mat1b blob_view;
     int open_param;
 
     bool setup();
@@ -82,13 +79,14 @@ public:
     bool saveTo();
 
     void updatePlayMode();
+    void updateBg();
 
     char buf[100];
     ofxOscBundle bundle;
     ofxOscMessage alive;
 
 protected: //KinectDelegate
-    virtual void onDepthData(const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx);
+    virtual void onDepthData(const cv::Mat1w& depth, const cv::Mat3b& depthClr, const cv::Mat1b& playerIdx);
 
     virtual void onSkeletonEventBegin();
 
@@ -102,14 +100,13 @@ protected: //KinectDelegate
     virtual void onPlayerLeave(int playerIdx);
 
 private:
-
+    
+    bool isBgDirty;
     void _addJoint_Tuio(cv::Point3f* pts, int playerIdx);
     void _sendJoint_Osc(cv::Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx);
     void _sendOrientation_Osc(const NUI_SKELETON_DATA* skel_data, int playerIdx);
 
     void _sendBlobOsc(int = 0);
-    void _onBlobDepth( const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx );
-    void _sendHandGesture_Osc(cv::Point3f* pts, int playerIdx );
-
-    void _sendDepthStream( const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx );
+    void _onBlobCamServer( const cv::Mat1w& depth, const cv::Mat3b& depthClr, const cv::Mat1b& playerIdx );
+    void _onBlobCCV( const cv::Mat1w& depth, const cv::Mat3b& depthClr, const cv::Mat1b& playerIdx );
 };

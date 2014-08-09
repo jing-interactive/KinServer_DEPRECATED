@@ -6,7 +6,8 @@ using namespace cv;
 
 #define KEY_DOWN(vk_code) ::GetAsyncKeyState(vk_code) & 0x8000
 
-inline bool isKeyToggle(int vk, bool* keyStatus = NULL){
+static bool isKeyToggle(int vk, bool* keyStatus = NULL)
+{
     //
     static bool isPrevKeyDown[256];
     BOOL k = KEY_DOWN(vk);
@@ -21,24 +22,6 @@ inline bool isKeyToggle(int vk, bool* keyStatus = NULL){
     }
     return false;
 }
-
-#define PORT_RECV 8888
-
-struct StartThread: public MiniThread
-{
-    StartThread()
-    {
-        printf("\nKinServer %s\n\nvinjn.z@gmail.com.\n\nhttp://vinjn.github.io/\n\n", VERSION);
-    }
-
-    void threadedFunction()
-    {
-        for (int b=0;b<8;b++)
-        {
-            ::Beep(sin(b/20.0f*3.14)*300,100);
-        }
-    }
-};
 
 bool showAllWindow = true;
 
@@ -68,6 +51,7 @@ const char* PARAM_WINDOW = "param_panel";
 const char* RGB_WINDOW = "color_view";
 const char* SKELETON_WINDOW ="skeleton_view";
 const char* BLOB_WINDOW = "blob_view";
+const char* BG_WINDOW = "bg_view";
 
 void createMainWindow(const KinectOption& param) 
 {
@@ -77,8 +61,11 @@ void createMainWindow(const KinectOption& param)
         namedWindow(DEPTH_WINDOW);
     if (param.skeleton)
         namedWindow(SKELETON_WINDOW);
-    else if (param.contains(KinectOption::PATT_CAMSERVER))
+
+    if (param.contains(KinectOption::PATT_CAMSERVER))
         namedWindow(BLOB_WINDOW);
+    if (param.contains(KinectOption::PATT_CCV))
+        namedWindow(BG_WINDOW);
 }
 
 void destroyMainWindow(const KinectOption& param) 
@@ -89,8 +76,10 @@ void destroyMainWindow(const KinectOption& param)
         destroyWindow(DEPTH_WINDOW);
     if (param.skeleton)
         destroyWindow(SKELETON_WINDOW);
-    else if (param.contains(KinectOption::PATT_CAMSERVER))
+    if (param.contains(KinectOption::PATT_CAMSERVER))
         destroyWindow(BLOB_WINDOW);
+    if (param.contains(KinectOption::PATT_CCV))
+        destroyWindow(BG_WINDOW);
 }
 
 void createParamWindow(const KinectOption& param, KinServer& device)
@@ -103,25 +92,19 @@ void createParamWindow(const KinectOption& param, KinServer& device)
     {
         createTrackbar("n_players", PARAM_WINDOW, &device.n_players, 2, onGameModeChanged, &device);
     }
-    else if (param.contains(KinectOption::PATT_CCV) || param.contains(KinectOption::PATT_CAMSERVER))
+    else if (param.contains(KinectOption::PATT_CAMSERVER))
     {
-        createTrackbar("min_area", PARAM_WINDOW, &device.min_area, MAX_AREA);
-        createTrackbar("max_area", PARAM_WINDOW, &device.max_area, MAX_AREA);
-        createTrackbar("open_param", PARAM_WINDOW, &device.open_param, 3);
+        createTrackbar("distance_mm", PARAM_WINDOW, &device.z_threshold_mm, 100);
+        createTrackbar("min_area", PARAM_WINDOW, &device.min_area, 200);
+        createTrackbar("blur", PARAM_WINDOW, &device.open_param, 3);
     }
 }
 
 bool fruit_ninja = false;
 
-void saveFrame(const string& filePath)
-{
-    throw std::exception("The method or operation is not implemented.");
-}
-
 int main(int argc, const char** argv)
 {
-    StartThread start_thread;
-    start_thread.startThread(false, false);
+    printf("\nKinServer %s\n\nvinjn.z@gmail.com.\n\nhttp://vinjn.github.io/\n\n", VERSION);
 
     SetThreadName(-1, "main");
 
@@ -136,7 +119,7 @@ int main(int argc, const char** argv)
         "{color         |false      |use color stream}"
         "{depth         |true       |use depth stream}" 
         "{skeleton      |true       |use skeleton stream}"
-        "{pattern       |hand       |running pattern, available options are hand/body/ccv/cam_server/jointed_blob/depth_stream}"
+        "{pattern       |hand       |running pattern, available options are hand/body/ccv/cam_server/jointed_blob}"
         "{minim         |0          |default mimized window}"
     };
     CommandLineParser args(argc, argv, keys);
@@ -170,10 +153,8 @@ int main(int argc, const char** argv)
     createParamWindow(the_param, device);
 
     int safe_time = timeGetTime();
-
-    Ptr<ofxOscReceiver> recv = new ofxOscReceiver;
-    recv->setup(PORT_RECV);
-    printf("OSC Command server listening at %d\n", PORT_RECV);
+    int start_time = timeGetTime();
+    bool depth_bg_initialized = false;
 
     while (loop)
     {
@@ -202,6 +183,7 @@ int main(int argc, const char** argv)
             safe_time = timeGetTime();
             motor_changed = false;
         }
+
         int key = waitKey(1);
         if (key == VK_ESCAPE)
             loop = false;
@@ -221,15 +203,11 @@ int main(int argc, const char** argv)
             }
         }
 
-        ofxOscMessage m;
-        if (recv->getNextMessage(&m))
+        if ((!depth_bg_initialized && timeGetTime() - start_time > 2000 && device.checkNewFrame(FRAME_DEPTH_U16))
+            || key == 'b')
         {
-            string addr = m.getAddress();
-            if (addr == "/capture" && m.getNumArgs() == 1 && m.getArgType(0) == OFXOSC_TYPE_STRING)
-            {
-                string filePath = m.getArgAsString(0);
-                saveFrame(filePath);
-            }
+            depth_bg_initialized = true;
+            device.updateBg();
         }
 
         if (showAllWindow)
@@ -237,15 +215,17 @@ int main(int argc, const char** argv)
             if (the_param.color)
                 imshow(RGB_WINDOW, device.getFrame(FRAME_COLOR_U8C3));
             if (the_param.depth)
-                imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U8C3));
+                imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U16));
             if (the_param.skeleton)
                 imshow(SKELETON_WINDOW, device.getFrame(FRAME_SKELETON_U8C3));
 
             if (the_param.contains(KinectOption::PATT_CAMSERVER))
-                {
-                    ScopedLocker l(device.mtx_depth_data_view);
-                    imshow(BLOB_WINDOW, device.blob_view);
-                }
+            {
+                ScopedLocker l(device.mtx_depth_data_view);
+                imshow(BLOB_WINDOW, device.blob_view);
+            }
+            if (the_param.contains(KinectOption::PATT_CCV))
+                imshow(BG_WINDOW, device.depth_bg);
         }
     }
     return 0;

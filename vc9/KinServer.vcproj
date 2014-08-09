@@ -255,10 +255,6 @@
 			>
 		</File>
 		<File
-			RelativePath="..\src\KinServer.stream.cpp"
-			>
-		</File>
-		<File
 			RelativePath="..\src\main.cpp"
 			>
 		</File>

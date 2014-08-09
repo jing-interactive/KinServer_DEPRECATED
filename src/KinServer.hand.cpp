@@ -6,7 +6,8 @@ using namespace cv;
 void KinServer::_addJoint_Tuio(Point3f* pts, int playerIdx ) 
 {
 	for (int i=0;i<refs.size();i++)
-	{	//Set Message
+	{	
+        //Set Message
 		int id = refs[i];
 		//skip outside joints
 		if (pts[id].x <= 0 || pts[id].x >= 1.0f

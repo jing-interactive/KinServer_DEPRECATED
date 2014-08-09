@@ -49,6 +49,19 @@ KinectOption::KinectOption(CommandLineParser& args)
         //	color = false;
         skeleton = false;//no need this
     }
+    else if (patt == "ccv")
+    {
+        pattern |= PATT_CCV;
+        pattern |= PATT_CAMSERVER;
+        printf("protocol TUIO (OSC will be added soon)");
+
+        if (port_tuio == -1)
+            port_tuio = 3333;
+
+        depth = true;
+        //	color = false;
+        skeleton = false;//no need this
+    }
     else if (patt == "body")
     {
         pattern |= PATT_JOINT;
@@ -56,14 +69,6 @@ KinectOption::KinectOption(CommandLineParser& args)
         depth = true;
         //		color = false;
         skeleton = true;		
-    }
-    else if (patt == "depth_stream")
-    {
-        pattern |= PATT_DEPTH_STREAM;
-        printf("protocol OSC");
-        depth = true;
-        //		color = false;
-        skeleton = false;		
     }
     else
     {
@@ -79,6 +84,7 @@ bool KinectOption::contains( int queryMode ) const
 
 bool KinServer::setup()
 {
+    isBgDirty = false;
     return KinectDevice::setup(mOption.color, mOption.depth, mOption.skeleton, this);
 }
 
@@ -92,19 +98,17 @@ KinectDevice(device_id), mOption(param)
 {
     osc_enabled = false; 
 
-    threshed_depth = MatU8(Size(DEPTH_WIDTH, DEPTH_HEIGHT), 0);
-    finger_view = MatRGB(Size(DEPTH_WIDTH, DEPTH_HEIGHT), Vec3b(255, 255, 255));
+    threshed_depth = Mat1b(Size(DEPTH_WIDTH, DEPTH_HEIGHT), 0);
+    depth_bg = Mat1w(Size(DEPTH_WIDTH, DEPTH_HEIGHT), 0);
+    finger_view = Mat3b(Size(DEPTH_WIDTH, DEPTH_HEIGHT), Vec3b(255, 255, 255));
 
     n_hands = 2;//default: two hands
     n_players = 1;//default: one player mode
     primary_player = -1;
 
-    z_near = 1000;
-    z_far = 3000;
-    min_area = 1;
-    max_area = 60;
-    blob_view.create(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_8UC1);
-    blob_view = CV_BLACK;
+    z_threshold_mm = 50;
+    min_area = 100;
+    blob_view = Mat1b(Size(DEPTH_WIDTH, DEPTH_HEIGHT), 0);
     open_param = 1;
 
     sender_osc = new ofxOscSender;
@@ -116,13 +120,12 @@ KinectDevice(device_id), mOption(param)
     {
         sender_tuio = new ofxOscSender;
         sender_tuio->setup(mOption.client, port_tuio);
-        printf("TUIO\t[%s:%d]\n",mOption.client.c_str(), port_tuio);
+        printf("TUIO\t[%s:%d]\n", mOption.client.c_str(), port_tuio);
     }
     puts("\n");
 
     loadFrom();
 
-    //TODO: if (_param.finger) ?
     if (mOption.contains(KinectOption::PATT_HAND_TUIO))
     {
         updatePlayMode();
@@ -142,10 +145,8 @@ bool KinServer::loadFrom()
         READ_FS(n_players);
         READ_FS(n_hands);
         READ_FS(open_param);
-        READ_FS(z_near);
-        READ_FS(z_far);
+        READ_FS(z_threshold_mm);
         READ_FS(min_area);
-        READ_FS(max_area);
 
         printf("KinConfig.xml loaded.\n");
         return true;
@@ -165,10 +166,8 @@ bool KinServer::saveTo()
         WRITE_FS(n_players);
         WRITE_FS(n_hands);
         WRITE_FS(open_param);
-        WRITE_FS(z_near);
-        WRITE_FS(z_far);
+        WRITE_FS(z_threshold_mm);
         WRITE_FS(min_area);
-        WRITE_FS(max_area);
 
         printf("KinConfig.xml saved.\n");
         return true;
@@ -196,7 +195,7 @@ void KinServer::updatePlayMode()
 
 void KinServer::onSkeletonEventBegin()
 {
-    if (mOption.pattern&KinectOption::PATT_HAND_TUIO)
+    if (mOption.pattern & KinectOption::PATT_HAND_TUIO)
     {
         bundle.clear();
         alive.clear();
@@ -208,9 +207,10 @@ void KinServer::onSkeletonEventBegin()
 //tuio messages are sent here
 void KinServer::onSkeletonEventEnd()
 {
-    static int frameseq = 0;
-    if (mOption.pattern&KinectOption::PATT_HAND_TUIO)
+    if (mOption.pattern & KinectOption::PATT_HAND_TUIO)
     {
+        static int frameseq = 0;
+
         frameseq++;
         // Send fseq message
         ofxOscMessage fseq;
@@ -224,12 +224,18 @@ void KinServer::onSkeletonEventEnd()
     }
 }
 
-void KinServer::onDepthData(const MatU16& depth, const MatRGB& depthClr, const MatU8& playerIdx)
+void KinServer::onDepthData(const Mat1w& depth, const Mat3b& depthClr, const Mat1b& playerIdx)
 {
-    if (mOption.contains(KinectOption::PATT_CAMSERVER))
-        _onBlobDepth(depth, depthClr, playerIdx);
-    else if (mOption.contains(KinectOption::PATT_DEPTH_STREAM))
-        _sendDepthStream(depth, depthClr, playerIdx);
+    if (isBgDirty)
+    {
+        isBgDirty = false;
+        depth_bg = depth.clone();
+    }
+
+    if (mOption.contains(KinectOption::PATT_CCV))
+        _onBlobCCV(depth, depthClr, playerIdx);
+    else if (mOption.contains(KinectOption::PATT_CAMSERVER))
+        _onBlobCamServer(depth, depthClr, playerIdx);
 }
 
 void KinServer::onPlayerData(Point3f skel_points[NUI_SKELETON_POSITION_COUNT], int playerIdx, bool isNewPlayer, NUI_SKELETON_DATA* rawData)
@@ -310,4 +316,9 @@ void KinServer::onPlayerLeave( int playerIdx )
     // update primary_player
     if (primary_player == playerIdx)
         primary_player = -1;
+}
+
+void KinServer::updateBg()
+{
+    isBgDirty = true;
 }

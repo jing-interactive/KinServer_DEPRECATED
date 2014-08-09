@@ -1,0 +1,2 @@
+cd ..
+KinServer -pattern=ccv
