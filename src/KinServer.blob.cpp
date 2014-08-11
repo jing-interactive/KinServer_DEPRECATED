@@ -5,9 +5,9 @@ using namespace cv;
 void KinServer::_onBlobCamServer(const Mat1w& depth, const Mat3b& depthClr, const Mat1b& playerIdx)
 {
     threshed_depth.setTo(CV_BLACK);
-    for (int y=0;y<DEPTH_HEIGHT;y++)
+    for (int y=y0;y<y1;y++)
     {
-        for (int x=0;x<DEPTH_WIDTH;x++)
+        for (int x=x0;x<x1;x++)
         {
             const Vec3b& clr = depthClr(y,x);
             uchar& out = threshed_depth(y,x);
@@ -39,7 +39,7 @@ void KinServer::_onBlobCamServer(const Mat1w& depth, const Mat3b& depthClr, cons
     _sendBlobOsc();
 }
 
-void sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTracker)
+void KinServer::sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTracker)
 {
     static int frameseq = 0;
 
@@ -62,22 +62,22 @@ void sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTracker)
     {	
         const vTrackedBlob& blob = blobTracker.trackedBlobs[i];
 
-#define addFloatX(num) set.addFloatArg((num)/(float)DEPTH_WIDTH)
-#define addFloatY(num) set.addFloatArg((num)/(float)DEPTH_HEIGHT)
-
         // TODO: roi skip outside joints
-        if (blob.center.x <= 0 || blob.center.x >= DEPTH_WIDTH
-            || blob.center.y <= 0|| blob.center.y >= DEPTH_HEIGHT)
+        if (blob.center.x <= x0 
+            || blob.center.x >= x1
+            || blob.center.y <= y0
+            || blob.center.y >= y1
+            )
             continue;
 
         ofxOscMessage set;
         set.setAddress( "/tuio/2Dcur" );
         set.addStringArg("set");
         set.addIntArg(blob.id);				// id
-        addFloatX(blob.center.x);	// x
-        addFloatY(blob.center.y);	// y
-        addFloatX(blob.velocity.x);			// dX
-        addFloatY(blob.velocity.y);			// dY
+        set.addFloatArg((blob.center.x - x0) / (x1 - x0));
+        set.addFloatArg((blob.center.y - y0) / (y1 - y0));
+        set.addFloatArg(blob.velocity.x / DEPTH_WIDTH);
+        set.addFloatArg(blob.velocity.y / DEPTH_HEIGHT);
         set.addFloatArg(0);		// m
         bundle.addMessage( set );							// add message to bundle
 
@@ -103,7 +103,7 @@ void KinServer::_onBlobCCV(const Mat1w& depth, const Mat3b& depthClr, const Mat1
             ushort dep = depth(y,x);
             ushort bg = depth_bg(y,x);
             uchar& out = threshed_depth(y,x);
-            if (bg - dep > z_threshold_mm)
+            if (dep > 0 && bg - dep > z_threshold_mm)
             { 
                 out = 255; 
             }

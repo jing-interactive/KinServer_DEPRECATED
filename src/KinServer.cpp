@@ -111,6 +111,11 @@ KinectDevice(device_id), mOption(param)
     blob_view = Mat1b(Size(DEPTH_WIDTH, DEPTH_HEIGHT), 0);
     open_param = 1;
 
+    x0 = 0;
+    y0 = 0;
+    x1 = DEPTH_WIDTH;
+    y1 = DEPTH_HEIGHT;
+
     sender_osc = new ofxOscSender;
     sender_osc->setup(mOption.client, mOption.port_osc);
     printf("OSC\t[%s:%d]\n",mOption.client.c_str(), mOption.port_osc);
@@ -147,6 +152,10 @@ bool KinServer::loadFrom()
         READ_FS(open_param);
         READ_FS(z_threshold_mm);
         READ_FS(min_area);
+        READ_FS(x0);
+        READ_FS(y0);
+        READ_FS(x1);
+        READ_FS(y1);
 
         printf("KinConfig.xml loaded.\n");
         return true;
@@ -168,6 +177,10 @@ bool KinServer::saveTo()
         WRITE_FS(open_param);
         WRITE_FS(z_threshold_mm);
         WRITE_FS(min_area);
+        WRITE_FS(x0);
+        WRITE_FS(y0);
+        WRITE_FS(x1);
+        WRITE_FS(y1);
 
         printf("KinConfig.xml saved.\n");
         return true;

@@ -46,12 +46,12 @@ void onGameModeChanged(int pos, void* userdata)
     }
 }
 
-const char* DEPTH_WINDOW = "depth_view";
+const char* DEPTH_WINDOW = "depth";
 const char* PARAM_WINDOW = "param_panel";
-const char* RGB_WINDOW = "color_view";
-const char* SKELETON_WINDOW ="skeleton_view";
-const char* BLOB_WINDOW = "blob_view";
-const char* BG_WINDOW = "bg_view";
+const char* RGB_WINDOW = "color";
+const char* SKELETON_WINDOW ="skeleton";
+const char* BLOB_WINDOW = "tracking";
+const char* BG_WINDOW = "background";
 
 void createMainWindow(const KinectOption& param) 
 {
@@ -94,8 +94,12 @@ void createParamWindow(const KinectOption& param, KinServer& device)
     }
     else if (param.contains(KinectOption::PATT_CAMSERVER))
     {
-        createTrackbar("distance_mm", PARAM_WINDOW, &device.z_threshold_mm, 100);
-        createTrackbar("min_area", PARAM_WINDOW, &device.min_area, 200);
+        createTrackbar("distance", PARAM_WINDOW, &device.z_threshold_mm, 100);
+        createTrackbar("size", PARAM_WINDOW, &device.min_area, 200);
+        createTrackbar("x0", PARAM_WINDOW, &device.x0, DEPTH_WIDTH);
+        createTrackbar("y0", PARAM_WINDOW, &device.y0, DEPTH_HEIGHT);
+        createTrackbar("x1", PARAM_WINDOW, &device.x1, DEPTH_WIDTH);
+        createTrackbar("y1", PARAM_WINDOW, &device.y1, DEPTH_HEIGHT);
         createTrackbar("blur", PARAM_WINDOW, &device.open_param, 3);
     }
 }
@@ -222,10 +226,17 @@ int main(int argc, const char** argv)
             if (the_param.contains(KinectOption::PATT_CAMSERVER))
             {
                 ScopedLocker l(device.mtx_depth_data_view);
+                Point ptA(device.x0, device.y0);
+                Point ptB(device.x1, device.y1);
+                rectangle(device.blob_view, ptA, ptB, CV_WHITE);
+                circle(device.blob_view, ptA, 5, CV_WHITE);
+                circle(device.blob_view, ptB, 5, CV_WHITE);
                 imshow(BLOB_WINDOW, device.blob_view);
             }
             if (the_param.contains(KinectOption::PATT_CCV))
+            {
                 imshow(BG_WINDOW, device.depth_bg);
+            }
         }
     }
     return 0;

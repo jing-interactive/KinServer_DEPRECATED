@@ -62,6 +62,10 @@ public:
     //blob related
     int z_threshold_mm;
     int min_area;
+    int x0;
+    int y0;
+    int x1;
+    int y1;
     vector<vBlob> native_blobs;
     vector<float> z_of_blobs;
     vector<int> id_of_blobs;
@@ -109,4 +113,5 @@ private:
     void _sendBlobOsc(int = 0);
     void _onBlobCamServer( const cv::Mat1w& depth, const cv::Mat3b& depthClr, const cv::Mat1b& playerIdx );
     void _onBlobCCV( const cv::Mat1w& depth, const cv::Mat3b& depthClr, const cv::Mat1b& playerIdx );
+    void sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTracker);
 };
