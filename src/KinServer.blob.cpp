@@ -5,6 +5,10 @@ using namespace cv;
 void KinServer::_onBlobCamServer(const Mat1w& depth, const Mat3b& depthClr, const Mat1b& playerIdx)
 {
     threshed_depth.setTo(CV_BLACK);
+    float x0 = corners[CORNER_DEPTH_LT].x - depthOrigin.x;
+    float x1 = corners[CORNER_DEPTH_RB].x - depthOrigin.x;
+    float y0 = corners[CORNER_DEPTH_LT].y - depthOrigin.y;
+    float y1 = corners[CORNER_DEPTH_RB].y - depthOrigin.y;
     for (int y=y0;y<y1;y++)
     {
         for (int x=x0;x<x1;x++)
@@ -62,11 +66,13 @@ void KinServer::sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTr
     {	
         const vTrackedBlob& blob = blobTracker.trackedBlobs[i];
 
+        Point2f center(blob.center.x + depthOrigin.x, blob.center.y + depthOrigin.y);
+
         // TODO: roi skip outside joints
-        if (blob.center.x <= x0 
-            || blob.center.x >= x1
-            || blob.center.y <= y0
-            || blob.center.y >= y1
+        if (center.x <= corners[CORNER_DEPTH_LT].x
+            || center.x >= corners[CORNER_DEPTH_RB].x
+            || center.y <= corners[CORNER_DEPTH_LT].y
+            || center.y >= corners[CORNER_DEPTH_RB].y
             )
             continue;
 
@@ -74,8 +80,8 @@ void KinServer::sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTr
         set.setAddress( "/tuio/2Dcur" );
         set.addStringArg("set");
         set.addIntArg(blob.id);				// id
-        set.addFloatArg((blob.center.x - x0) / (x1 - x0));
-        set.addFloatArg((blob.center.y - y0) / (y1 - y0));
+        set.addFloatArg((center.x - corners[CORNER_OUT_LT].x) / (corners[CORNER_OUT_RB].x - corners[CORNER_OUT_LT].x));
+        set.addFloatArg((center.y - corners[CORNER_OUT_LT].y) / (corners[CORNER_OUT_RB].y - corners[CORNER_OUT_LT].y));
         set.addFloatArg(blob.velocity.x / DEPTH_WIDTH);
         set.addFloatArg(blob.velocity.y / DEPTH_HEIGHT);
         set.addFloatArg(0);		// m
@@ -96,9 +102,14 @@ void KinServer::sendTuioMessage(ofxOscSender& sender, const vBlobTracker& blobTr
 void KinServer::_onBlobCCV(const Mat1w& depth, const Mat3b& depthClr, const Mat1b& playerIdx)
 {
     threshed_depth.setTo(CV_BLACK);
-    for (int y=0;y<DEPTH_HEIGHT;y++)
+    float x0 = corners[CORNER_DEPTH_LT].x - depthOrigin.x;
+    float x1 = corners[CORNER_DEPTH_RB].x - depthOrigin.x;
+    float y0 = corners[CORNER_DEPTH_LT].y - depthOrigin.y;
+    float y1 = corners[CORNER_DEPTH_RB].y - depthOrigin.y;
+
+    for (int y=y0;y<y1;y++)
     {
-        for (int x=0;x<DEPTH_WIDTH;x++)
+        for (int x=x0;x<x1;x++)
         {
             ushort dep = depth(y,x);
             ushort bg = depth_bg(y,x);

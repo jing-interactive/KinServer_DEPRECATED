@@ -6,6 +6,55 @@ using namespace cv;
 
 #define KEY_DOWN(vk_code) ::GetAsyncKeyState(vk_code) & 0x8000
 
+int selectedCornerId= -1;
+Ptr<KinServer> devicePtr;
+
+void onCCVMouse(int event, int x, int y, int flags, void* param)
+{
+    const int kBoundary = 2000;
+    if (x < 0 || x > kBoundary) x = 0;
+    if (y < 0 || y > kBoundary) y = 0;
+
+    if (event == EVENT_LBUTTONUP || !(flags & EVENT_FLAG_LBUTTON))
+    {
+        selectedCornerId = -1;
+        return;
+    }
+
+    if (event == EVENT_LBUTTONDOWN)
+    {
+        selectedCornerId = -1;
+
+        for (int i=0;i<KinServer::CORNER_COUNT;i++)
+        {
+            Point* pt = &devicePtr->corners[i];
+            const int kThreshold = 15;
+            if (abs(pt->x - x) < kThreshold && abs(pt->y - y) < kThreshold)
+            {
+                selectedCornerId = i;
+                break;
+            }
+        }
+        return;
+    }
+
+    if (event == EVENT_MOUSEMOVE && (flags & EVENT_FLAG_LBUTTON))
+    {
+        if (selectedCornerId != -1)
+        {
+            if (selectedCornerId < KinServer::CORNER_OUT_LT)
+            {
+                x = max<int>(x, devicePtr->depthOrigin.x);
+                y = max<int>(y, devicePtr->depthOrigin.y);
+                x = min<int>(x, devicePtr->depthOrigin.x + DEPTH_WIDTH);
+                y = min<int>(y, devicePtr->depthOrigin.y + DEPTH_HEIGHT);
+            }
+            devicePtr->corners[selectedCornerId] = Point(x, y);
+        }
+        return;
+    }
+}
+
 static bool isKeyToggle(int vk, bool* keyStatus = NULL)
 {
     //
@@ -51,25 +100,37 @@ const char* PARAM_WINDOW = "param_panel";
 const char* RGB_WINDOW = "color";
 const char* SKELETON_WINDOW ="skeleton";
 const char* BLOB_WINDOW = "tracking";
-const char* BG_WINDOW = "background";
+const char* CCV_BG_WINDOW = "CCV_back";
+const char* CCV_WINDOW = "CCV";
 
 void createMainWindow(const KinectOption& param) 
 {
+    if (param.contains(KinectOption::PATT_CCV))
+    {
+        namedWindow(CCV_WINDOW);
+        namedWindow(CCV_BG_WINDOW);
+        namedWindow(DEPTH_WINDOW);
+        return;
+    }
     if (param.color)
         namedWindow(RGB_WINDOW);
-    if (param.depth)
-        namedWindow(DEPTH_WINDOW);
     if (param.skeleton)
         namedWindow(SKELETON_WINDOW);
-
+    if (param.depth)
+        namedWindow(DEPTH_WINDOW);
     if (param.contains(KinectOption::PATT_CAMSERVER))
         namedWindow(BLOB_WINDOW);
-    if (param.contains(KinectOption::PATT_CCV))
-        namedWindow(BG_WINDOW);
 }
 
 void destroyMainWindow(const KinectOption& param) 
 {
+    if (param.contains(KinectOption::PATT_CCV))
+    {
+        destroyWindow(CCV_WINDOW);
+        destroyWindow(CCV_BG_WINDOW);
+        destroyWindow(DEPTH_WINDOW);
+        return;
+    }
     if (param.color)
         destroyWindow(RGB_WINDOW);
     if (param.depth)
@@ -78,8 +139,6 @@ void destroyMainWindow(const KinectOption& param)
         destroyWindow(SKELETON_WINDOW);
     if (param.contains(KinectOption::PATT_CAMSERVER))
         destroyWindow(BLOB_WINDOW);
-    if (param.contains(KinectOption::PATT_CCV))
-        destroyWindow(BG_WINDOW);
 }
 
 void createParamWindow(const KinectOption& param, KinServer& device)
@@ -96,15 +155,42 @@ void createParamWindow(const KinectOption& param, KinServer& device)
     {
         createTrackbar("distance", PARAM_WINDOW, &device.z_threshold_mm, 100);
         createTrackbar("size", PARAM_WINDOW, &device.min_area, 200);
-        createTrackbar("x0", PARAM_WINDOW, &device.x0, DEPTH_WIDTH);
-        createTrackbar("y0", PARAM_WINDOW, &device.y0, DEPTH_HEIGHT);
-        createTrackbar("x1", PARAM_WINDOW, &device.x1, DEPTH_WIDTH);
-        createTrackbar("y1", PARAM_WINDOW, &device.y1, DEPTH_HEIGHT);
         createTrackbar("blur", PARAM_WINDOW, &device.open_param, 3);
     }
 }
 
-bool fruit_ninja = false;
+static bool fruit_ninja = false;
+
+static void drawBoundingBox(Mat frame, int lt, int rb, Scalar clrRect, Scalar clrCircle)
+{
+    const int kThickness = 2;
+    rectangle(frame, devicePtr->corners[lt], 
+        devicePtr->corners[rb], clrRect, kThickness);
+    circle(frame, devicePtr->corners[lt], 10, clrCircle, kThickness);
+    circle(frame, devicePtr->corners[rb], 10, clrCircle, kThickness);
+}
+
+static void drawBlobId(Mat frame)
+{
+    const vBlobTracker& blobTracker = devicePtr->blobTracker;
+    for (int i=0;i<blobTracker.trackedBlobs.size();i++)
+    {	
+        const vTrackedBlob& blob = blobTracker.trackedBlobs[i];
+        Point center(blob.center.x + devicePtr->depthOrigin.x, blob.center.y + devicePtr->depthOrigin.y);
+        // TODO: roi skip outside joints
+        if (center.x <= devicePtr->corners[KinServer::CORNER_DEPTH_LT].x
+            || center.x >= devicePtr->corners[KinServer::CORNER_DEPTH_RB].x
+            || center.y <= devicePtr->corners[KinServer::CORNER_DEPTH_LT].y
+            || center.y >= devicePtr->corners[KinServer::CORNER_DEPTH_RB].y
+            )
+            continue;
+
+        circle(frame, center, 10, CV_WHITE);
+        char info[100];
+        sprintf(info, "# %d", blob.id);
+        vDrawText(frame, center.x + 5, center.y + 5, info);
+    }
+}
 
 int main(int argc, const char** argv)
 {
@@ -138,7 +224,8 @@ int main(int argc, const char** argv)
     showAllWindow = !args.get<int>("minim"); 
 
     KinectOption the_param(args);
-    KinServer device(device_id, the_param);
+    devicePtr = new KinServer(device_id, the_param);
+    KinServer& device = *devicePtr;
 
     if (!device.setup())
         return -1;
@@ -155,10 +242,13 @@ int main(int argc, const char** argv)
     if (showAllWindow)
         createMainWindow(the_param);
     createParamWindow(the_param, device);
+    setMouseCallback(CCV_WINDOW, onCCVMouse);
 
     int safe_time = timeGetTime();
     int start_time = timeGetTime();
     bool depth_bg_initialized = false;
+
+    Mat3b ccvFrame(DEPTH_HEIGHT*1.5, DEPTH_WIDTH*1.5);
 
     while (loop)
     {
@@ -216,26 +306,41 @@ int main(int argc, const char** argv)
 
         if (showAllWindow)
         {
-            if (the_param.color)
-                imshow(RGB_WINDOW, device.getFrame(FRAME_COLOR_U8C3));
-            if (the_param.depth)
-                imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U16));
-            if (the_param.skeleton)
-                imshow(SKELETON_WINDOW, device.getFrame(FRAME_SKELETON_U8C3));
-
-            if (the_param.contains(KinectOption::PATT_CAMSERVER))
-            {
-                ScopedLocker l(device.mtx_depth_data_view);
-                Point ptA(device.x0, device.y0);
-                Point ptB(device.x1, device.y1);
-                rectangle(device.blob_view, ptA, ptB, CV_WHITE);
-                circle(device.blob_view, ptA, 5, CV_WHITE);
-                circle(device.blob_view, ptB, 5, CV_WHITE);
-                imshow(BLOB_WINDOW, device.blob_view);
-            }
             if (the_param.contains(KinectOption::PATT_CCV))
             {
-                imshow(BG_WINDOW, device.depth_bg);
+                ccvFrame.setTo(Scalar::all(195));
+                {
+                    ScopedLocker l(device.mtx_depth_data_view);
+                    vFastCopyImageTo(device.blob_view, ccvFrame, Rect(device.depthOrigin, Size(DEPTH_WIDTH, DEPTH_HEIGHT)));
+                }
+                drawBoundingBox(ccvFrame, KinServer::CORNER_DEPTH_LT, KinServer::CORNER_DEPTH_RB, rgbColor(144, 80, 81), rgbColor(0, 255, 0));
+                drawBoundingBox(ccvFrame, KinServer::CORNER_OUT_LT, KinServer::CORNER_OUT_RB, rgbColor(24, 115, 0), rgbColor(0, 104, 183));
+                if (selectedCornerId != -1) 
+                {
+                    circle(ccvFrame, device.corners[selectedCornerId], 15, CV_RED);
+                }
+
+                drawBlobId(ccvFrame);
+
+                imshow(CCV_WINDOW, ccvFrame);
+                imshow(CCV_BG_WINDOW, device.depth_bg);
+                imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U16));
+            }
+            else
+            {
+
+                if (the_param.color)
+                    imshow(RGB_WINDOW, device.getFrame(FRAME_COLOR_U8C3));
+                if (the_param.depth)
+                    imshow(DEPTH_WINDOW, device.getFrame(FRAME_DEPTH_U16));
+                if (the_param.skeleton)
+                    imshow(SKELETON_WINDOW, device.getFrame(FRAME_SKELETON_U8C3));
+
+                if (the_param.contains(KinectOption::PATT_CAMSERVER))
+                {
+                    ScopedLocker l(device.mtx_depth_data_view);
+                    imshow(BLOB_WINDOW, device.blob_view);
+                }
             }
         }
     }

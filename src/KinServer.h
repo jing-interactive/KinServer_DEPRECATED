@@ -62,10 +62,18 @@ public:
     //blob related
     int z_threshold_mm;
     int min_area;
-    int x0;
-    int y0;
-    int x1;
-    int y1;
+    
+    Point depthOrigin;
+    enum 
+    {
+        CORNER_DEPTH_LT,
+        CORNER_DEPTH_RB,
+        CORNER_OUT_LT,
+        CORNER_OUT_RB,
+        CORNER_COUNT
+    };
+    Point corners[CORNER_COUNT];
+
     vector<vBlob> native_blobs;
     vector<float> z_of_blobs;
     vector<int> id_of_blobs;
