@@ -1,3 +1,5 @@
+#DEPRECATED, please check https://github.com/vnm-interactive/KinServer
+
 KinServer
 =========
 
