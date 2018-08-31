@@ -1,4 +1,4 @@
-#DEPRECATED, please check https://github.com/vnm-interactive/KinServer
+#DEPRECATED, please check https://github.com/jing-interactive/AirTouch
 
 KinServer
 =========
